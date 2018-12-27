@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (C) 2018 Baidu, Inc. All Rights Reserved.
+  -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:gravity="center">
+    <com.github.rubensousa.raiflatbutton.RaiflatButton
+            android:id="@+id/view_group_btn"
+            style="@style/Base.Widget.AppCompat.Button.Colored"
+            android:layout_width="250dp"
+            android:layout_height="60dp"
+            android:text="用户查看"/>
+    <com.github.rubensousa.raiflatbutton.RaiflatButton
+            android:id="@+id/set_groudid_btn"
+            style="@style/Base.Widget.AppCompat.Button.Colored"
+            android:layout_width="250dp"
+            android:layout_height="60dp"
+            android:text="监区设置"/>
+    <com.github.rubensousa.raiflatbutton.RaiflatButton
+            android:id="@+id/server_ip_btn"
+            style="@style/Base.Widget.AppCompat.Button.Colored"
+            android:layout_width="250dp"
+            android:layout_height="60dp"
+            android:text="服务器地址设置"/>
+    <com.github.rubensousa.raiflatbutton.RaiflatButton
+            android:id="@+id/port_btn"
+            style="@style/Base.Widget.AppCompat.Button.Colored"
+            android:layout_width="250dp"
+            android:layout_height="60dp"
+            android:text="端口设置"/>
+    <com.github.rubensousa.raiflatbutton.RaiflatButton
+            android:id="@+id/appno_btn"
+            style="@style/Base.Widget.AppCompat.Button.Colored"
+            android:layout_width="250dp"
+            android:layout_height="60dp"
+            android:text="设备编号"/>
+
+</LinearLayout>

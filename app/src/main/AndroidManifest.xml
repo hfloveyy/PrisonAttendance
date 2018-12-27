@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.xzx.hf.prisonattendance">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+            android:allowBackup="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:supportsRtl="true"
+            android:name="com.xzx.hf.prisonattendance.MyApplication"
+            android:theme="@style/AppTheme">
+
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <service android:name=".netty.NettyService"/>
+        <activity android:name=".VideoIdentityActivity" android:hardwareAccelerated="true">
+        </activity>
+        <activity android:name=".baidu.UserGroupManagerActivity">
+        </activity>
+        <activity android:name=".baidu.UserActivity" android:label="用户信息">
+        </activity>
+        <activity android:name=".baidu.UserListActivity">
+        </activity>
+        <activity android:name=".baidu.RegActivity" android:label="注册">
+        </activity>
+        <activity android:name=".baidu.RgbDetectActivity">
+        </activity>
+        <activity android:name=".baidu.GroupListActivity">
+        </activity>
+        <activity android:name=".baidu.AddGroupActivity">
+        </activity>
+        <activity android:name=".baidu.BatchImportActivity">
+        </activity>
+        <activity android:name=".baidu.LivenessSettingActivity">
+        </activity>
+        <activity android:name=".HamButtonActivity">
+        </activity>
+        <activity android:name=".DetectResultActivity" android:label="点名结果">
+        </activity>
+        <activity android:name=".SettingActivity" android:label="设置">
+        </activity>
+
+
+
+    </application>
+
+</manifest>
+
+
+
+
