@@ -23,6 +23,25 @@ object PaFaceApi{
         return criminals
     }
 
+    fun getCriminals(list: MutableList<User>):MutableList<User>{
+        var criminals = mutableListOf<User>()
+        for(user in list){
+            if (!isPolice(user)){
+                criminals.add(user)
+            }
+        }
+        return criminals
+    }
+    fun getPolices(list: MutableList<User>):MutableList<User>{
+        var polices = mutableListOf<User>()
+        for(user in list){
+            if (isPolice(user)){
+                polices.add(user)
+            }
+        }
+        return polices
+    }
+
     fun isPolice(user:User):Boolean{
         val userPlus = LitePal.where("userid = ?",user.userId).find(UserPlus::class.java)
         if (userPlus[0].userType.toInt() == 0){
@@ -43,11 +62,11 @@ object PaFaceApi{
 
     fun convertId2User(groudId:String,list:MutableList<String>):MutableList<User>{
         val ret_list = mutableListOf<User>()
+        //val police_list = mutableListOf<User>()
         for (userId in list){
             var user = FaceApi.getInstance().getUserInfo(groudId,userId)
             if(user!=null)
-                if (!isPolice(user))
-                    ret_list.add(user)
+                ret_list.add(user)
         }
         return ret_list
     }

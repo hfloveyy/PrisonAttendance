@@ -103,7 +103,7 @@ public class RegActivity extends Activity implements View.OnClickListener {
 
         usernameEt = (EditText) findViewById(R.id.username_et);
         usernumEt = (EditText) findViewById(R.id.usernum_et);
-        mTypeRg = (RadioGroup) findViewById(R.id.type_rg);
+        //mTypeRg = (RadioGroup) findViewById(R.id.type_rg);
         avatarIv = (ImageView) findViewById(R.id.avatar_iv);
         autoDetectBtn = (Button) findViewById(R.id.auto_detect_btn);
         fromAlbumButton = (Button) findViewById(R.id.pick_from_album_btn);
@@ -118,6 +118,17 @@ public class RegActivity extends Activity implements View.OnClickListener {
 
     private void init() {
         SQLiteDatabase db = LitePal.getDatabase();
+        Intent intent = getIntent();
+        if (intent!=null){
+            String userid = intent.getStringExtra("userid");
+            String userinfo = intent.getStringExtra("userinfo");
+            String usertype = intent.getStringExtra("usertype");
+            usernumEt.setText(userid);
+            usernameEt.setText(userinfo);
+            usernumEt.setEnabled(false);
+            usernameEt.setEnabled(false);
+            typeId = usertype;
+        }
     }
 
     @Override
@@ -159,13 +170,14 @@ public class RegActivity extends Activity implements View.OnClickListener {
             startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE);
 
         } else if (v == submitButton) {
+            /*
             int type = mTypeRg.getCheckedRadioButtonId();
             if (type == R.id.police_rb){
                 typeId = "0";
             }
             if (type == R.id.crimials_rb){
                 typeId = "1";
-            }
+            }*/
 
             register(faceImagePath);
         }
@@ -329,11 +341,11 @@ public class RegActivity extends Activity implements View.OnClickListener {
             Toast.makeText(RegActivity.this, "人脸文件不存在", Toast.LENGTH_LONG).show();
             return;
         }
-
+        /*
         if(FaceApi.getInstance().getUserInfo(groupId,usernum)!=null){
             Toast.makeText(RegActivity.this, "用户编号已注册,请更改编号", Toast.LENGTH_LONG).show();
             return;
-        }
+        }*/
 
         final User user = new User();
         final UserPlus userPlus = new UserPlus();
@@ -374,13 +386,15 @@ public class RegActivity extends Activity implements View.OnClickListener {
 
 //                   target = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/chaixiaogangFeature2");
 //                   Utils.saveToFile(target,"feature2.txt",bytes);
-                    String ret_msg = HttpApi.INSTANCE.regUser(user,feature,userPlus,filePath);
+                    //String ret_msg = HttpApi.INSTANCE.regUser(user,feature,userPlus,filePath);
+                    String ret_msg = HttpApi.INSTANCE.updateUser(user,feature,userPlus,filePath);
                     Log.e("TestFuel",ret_msg);
                     if (ret_msg.equals("success")){
                         if (FaceApi.getInstance().userAdd(user)) {
                             userPlus.setUpdateTime(user.getUpdateTime());
                             userPlus.save();
-                            toast("注册成功");
+                            HttpApi.INSTANCE.syncDB();
+                            toast("更新成功！");
                             finish();
                         } else {
                             toast(ret_msg);

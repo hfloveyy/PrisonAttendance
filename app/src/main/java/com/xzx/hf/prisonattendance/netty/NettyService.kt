@@ -24,7 +24,13 @@ import android.os.PowerManager.FULL_WAKE_LOCK
 import android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP
 import android.content.Context.POWER_SERVICE
 import android.content.Context.KEYGUARD_SERVICE
+import android.content.IntentFilter
+import android.net.ConnectivityManager
 import android.os.PowerManager
+import com.xzx.hf.prisonattendance.utils.NetReceiver
+import android.net.ConnectivityManager.CONNECTIVITY_ACTION
+
+
 
 
 class NettyService : Service(),NettyListener{
@@ -42,7 +48,7 @@ class NettyService : Service(),NettyListener{
     // 唤醒锁
     private  lateinit var mWakeLock:PowerManager.WakeLock
 
-    private var intentReceiver:Intent = Intent("com.xzx.hf.prisonattendance.RECEIVER")
+    private var netReceiver:NetReceiver = NetReceiver()
     override fun onMessageResponse(msg: Any) {
         //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         //Log.e("NettyService", "onMessageResponse:" + msg)
@@ -161,6 +167,7 @@ class NettyService : Service(),NettyListener{
 
     override fun onDestroy() {
         super.onDestroy()
+        unregisterReceiver(netReceiver)
         nettyClient.disconnect()
         if (mWakeLock != null) {
             Log.e("Netty","----> 终止服务,释放唤醒锁")
@@ -189,7 +196,9 @@ class NettyService : Service(),NettyListener{
     override fun onCreate() {
         super.onCreate()
         Log.e("Netty","NettyService start")
-
+        val mFilter = IntentFilter()
+        mFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
+        registerReceiver(netReceiver, mFilter)
 
 
     }

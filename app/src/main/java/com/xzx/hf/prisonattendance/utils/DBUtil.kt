@@ -4,6 +4,7 @@ import android.util.Log
 import com.baidu.aip.api.FaceApi
 import com.baidu.aip.entity.Feature
 import com.baidu.aip.entity.User
+import com.xzx.hf.prisonattendance.entity.CallLog
 import com.xzx.hf.prisonattendance.entity.UserPlus
 import org.json.JSONObject
 import org.litepal.LitePal
@@ -18,8 +19,30 @@ object DBUtil{
             val updateTime:Long = cursor.getLong(cursor.getColumnIndex("updatetime"))
             return updateTime
         }catch (e:Exception){
-            Log.e("DBsync","DB not init!")
+            Log.e("DBsync",e.toString())
             return 0L
+        }
+
+    }
+
+    fun getCallLog(time:Long):MutableList<String>{
+        try {
+            //val logs = LitePal.where("updatetime > ",time.toString()).order("updatetime").find<CallLog>()
+            val logs = mutableListOf<String>()
+            val cursor = LitePal.findBySQL("select * from calllog where updatetime > $time")
+            cursor.move(1)
+            //val logs = cursor.getString(cursor.getColumnIndex("calllog"))
+
+            for (i in 0..((cursor.count)-1)){
+                val log = cursor.getString(cursor.getColumnIndex("calllog"))
+                logs.add(log)
+            }
+
+            return logs
+        }catch (e:Exception){
+
+            Log.e("DBsync",e.toString())
+            return mutableListOf<String>()
         }
 
     }

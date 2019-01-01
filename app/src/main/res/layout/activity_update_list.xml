@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              tools:context="com.xzx.hf.prisonattendance.UpdateListActivity"
+              android:orientation="vertical">
+<LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:padding="8dp"
+        android:background="@android:color/darker_gray">
+
+    <com.xzx.hf.prisonattendance.utils.SearchView
+            android:id="@+id/searchView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/white"/>
+
+</LinearLayout>
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:padding="8dp"
+            android:orientation="horizontal"
+            android:background="@android:color/darker_gray">
+        <com.github.rubensousa.raiflatbutton.RaiflatButton
+                android:id="@+id/police_btn"
+                style="@style/Base.Widget.AppCompat.Button.Colored"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:layout_height="60dp"
+                android:text="警察"/>
+        <com.github.rubensousa.raiflatbutton.RaiflatButton
+                android:id="@+id/criminal_btn"
+                style="@style/Base.Widget.AppCompat.Button.Colored"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:layout_height="60dp"
+                android:text="服刑人员"/>
+    </LinearLayout>
+    <android.support.v7.widget.RecyclerView
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/user_list_rv"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+
+</LinearLayout>

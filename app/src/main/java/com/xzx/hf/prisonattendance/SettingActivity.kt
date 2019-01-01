@@ -42,6 +42,9 @@ class SettingActivity : AppCompatActivity() , View.OnClickListener{
                     //Log.e("Receive",password)
                 }
             }
+            negativeButton("取消"){
+                startActivity<MainActivity>()
+            }
 
         }.show().setCancelable(false)
         //init()

@@ -10,6 +10,7 @@ public class UserPlus extends LitePalSupport {
     private String userId = "";
     private String userStatus = "1";
 
+
     public String getUserStatus() {
         return userStatus;
     }

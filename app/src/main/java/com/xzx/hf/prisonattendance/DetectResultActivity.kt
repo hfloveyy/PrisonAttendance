@@ -94,12 +94,13 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
                 when(callnameType){
                     "3" -> {
                         setTitle("点名结果(外出)")
-                        calltype_tv.text = "缺少服刑人员列表($total 人)"
+                        calltype_tv.text = "外出服刑人员列表($total 人)"
                         calltype_tv.textColor = getColor(R.color.fuchsia)
                     }
                     "4" -> {
+                        crimialslist.clear()
                         setTitle("点名结果(收回)")
-                        calltype_tv.text = "缺少服刑人员列表($total 人)"
+
                         calltype_tv.textColor = getColor(R.color.crimson)
                         //Log.e("TestFuel","MSG:"+msg)
                         val retmsg = HttpApi.postDataSync(msg,"/callReturn")
@@ -114,7 +115,8 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
                             crimialslist.add(userid)
                             // Your code here
                         }
-                        crimialslist.clear()
+                        calltype_tv.text = if(crimialslist.size>0){"缺少服刑人员列表(${crimialslist.size} 人)"}else{"服刑人员全部已收回！"}
+                        //
 
 
                     }
@@ -180,7 +182,7 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
         adapter!!.setOnItemClickLitsener(object : OnItemClickListener {
 
             override fun onItemClick(view: View, position: Int) {
-                if (appno == preferences.appno) {
+                if (appno != preferences.appno) {
                     return
                 }
                 val userList = adapter!!.getUserList()
@@ -190,11 +192,11 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
                     selector("请选择状态",statusList){ds, i ->
                         view.user_status_tv.text = "当前状态："+statusList[i]
                         val status = when(statusList[i]){
-                            "正常" -> "0"
-                            "看病" -> "1"
-                            "接见" -> "2"
-                            "其他" -> "3"
-                            else -> "4"
+                            "正常" -> "1"
+                            "看病" -> "2"
+                            "接见" -> "3"
+                            "其他" -> "4"
+                            else -> "5"
                         }
                         /*
                         var json = jsonObject(
@@ -291,7 +293,7 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
             val user = userList[position]
             holder.userId.text = "服刑人员编号: " + user.userId
             holder.userInfo.text = "服刑人员姓名：" + user.userInfo
-            Glide.with(this@DetectResultActivity).load("http://${preferences.serverIP}:8080/Uploads/HeadPicture/${user.userId}/${user.userId}.jpg").into(holder.image)
+            //Glide.with(this@DetectResultActivity).load("http://${preferences.serverIP}:8080/Uploads/HeadPicture/${user.userId}/${user.userId}.jpg").into(holder.image)
 
             if (mOnItemClickListener != null) {
                 holder.itemView.setOnClickListener {

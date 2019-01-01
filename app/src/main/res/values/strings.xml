@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">新建监狱服刑人员视频点名系统</string>
-    <string name="version">1.0</string>
+    <string name="version">1.1</string>
     <string name="attendance">点名</string>
-    <string name="register">注册</string>
+    <string name="register">人脸采集</string>
     <string name="setting">设置</string>
     <string name="out">外出</string>
     <string name="back">收回</string>

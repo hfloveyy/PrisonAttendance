@@ -36,20 +36,35 @@ object HttpApi{
     init{
         Log.e("TestFuel","Initializing with object:$this")
     }
-    fun getData(){
-        "/get"
-            .httpGet()
-            .responseString { request, response, result ->
-                when (result) {
-                    is Result.Failure -> {
-                        val ex = result.getException()
-                    }
-                    is Result.Success -> {
-                        val data = result.get()
-                        Log.e("TestFuel",data.toString())
-                    }
+    fun getUserIds(area:String):MutableList<String>{
+        val url = "/get_user"
+        var ret_list = mutableListOf<String>()
+        runBlocking {
+
+
+            val (request, response, result) = url.httpGet(listOf("areaid" to area.toInt(),"userid" to ""))
+                //.header("Content-Type" to "application/json")
+                .awaitStringResponseResult()
+            val ret = response.statusCode
+            //Log.e("TestFuel",ret.toString())
+            if (ret == 200){
+                val data = result.component1()
+                //Log.e("TestFuel",data)
+                val jsonObject = JSONObject(data)
+                val ret_code = jsonObject.getString("ret_code")
+                val jsonArray = jsonObject.getJSONArray("userlist")
+                for (i in 0..(jsonArray.length()-1)){
+                    var obj:JSONObject = jsonArray.get(i) as JSONObject
+                    //Log.e("TestFuel",obj.toString())
+                    ret_list.add(obj.getString("user_id"))
+                    //ret_list.add(obj)
                 }
+            }else{
+                Log.e("TestFuel","网络连接失败,未更新数据库。")
             }
+
+        }
+        return ret_list
     }
     fun postData(url:String,list: List<Pair<String, Any?>>,filesDir: String){
         url
@@ -68,6 +83,31 @@ object HttpApi{
                 }
             }
     }
+
+    fun updateUser(user: User,feature: Feature,userPlus: UserPlus,filesDir: String):String{
+        //val image = "data:image/jpeg;base64," + fileToBase64(filesDir)
+        val dataJson: JsonObject = jsonObject(
+            "user_id" to user.userId,
+            "user_info" to user.userInfo,
+            //"group_id" to user.groupId,
+            "ctime" to user.ctime,
+            "update_time" to user.updateTime,
+            "face_token" to feature.faceToken,
+            "group_id" to userPlus.area,
+            //"image_name" to feature.imageName,
+            "usertype" to userPlus.userType,
+            "userimage" to ""
+            //"userstatus" to userPlus.userStatus
+        )
+        val data = dataJson.toString()
+        Log.e("TestFuel",data)
+        val ret =  postDataSync("/update_user", data,filesDir,user.userId)
+        Log.e("TestFuel",ret)
+        return ret
+    }
+
+
+
     fun regUser(user: User,feature: Feature,userPlus: UserPlus,filesDir: String):String{
         val dataJson: JsonObject = jsonObject(
             "user_id" to user.userId,
@@ -166,9 +206,11 @@ object HttpApi{
         var ret = ""
         var json = JSONObject()
         val img = "data:image/jpeg;base64," + fileToBase64(filesDir)
-        Log.e("TestFuel",img)
+        //Log.e("TestFuel",img)
+
         json.put("userid",userId)
         json.put("imageurl",img)
+        Log.e("TestFuel",json.toString())
         runBlocking {
             val (request, response, result) = Fuel.post("/uploadphoto")
                 .header("Content-Type" to "application/json")
@@ -224,8 +266,8 @@ object HttpApi{
             if (flag == "1"){
                 var jsonUploadfile = JSONObject(httpUploadFile(filesDir,userId))
                 Log.e("TestFuel",jsonUploadfile.toString())
-                //val flagUploadfile = jsonUploadfile.get("ret_code")
-                //ret = jsonUploadfile.get("msg").toString()
+                val flagUploadfile = jsonUploadfile.get("ret_code")
+                ret = jsonUploadfile.get("msg").toString()
             }
 
         }
@@ -283,6 +325,7 @@ object HttpApi{
                                                 //.header("Content-Type" to "application/json")
                                                 .awaitStringResponseResult()
             val ret = response.statusCode
+            Log.e("TestFuel","db:"+result.component1())
             Log.e("TestFuel",ret.toString())
             if (ret == 200){
                 val data = result.component1()

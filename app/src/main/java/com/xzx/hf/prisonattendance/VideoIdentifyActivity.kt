@@ -55,6 +55,7 @@ import com.robinhood.ticker.TickerUtils
 import com.robinhood.ticker.TickerView
 import com.xzx.hf.prisonattendance.baidu.LivenessSettingActivity
 import com.xzx.hf.prisonattendance.baidu.utils.Utils
+import com.xzx.hf.prisonattendance.entity.CallLog
 import com.xzx.hf.prisonattendance.utils.PaFaceApi
 import com.xzx.hf.prisonattendance.entity.UserPlus
 import com.xzx.hf.prisonattendance.netty.NettyClient
@@ -62,17 +63,14 @@ import com.xzx.hf.prisonattendance.netty.NettyListener
 import com.xzx.hf.prisonattendance.utils.HttpApi
 import com.xzx.hf.prisonattendance.utils.SharedPreferencesUtils
 import kotlinx.android.synthetic.main.activity_video_identify.*
-import org.jetbrains.anko.alert
-import org.jetbrains.anko.startActivity
 import java.io.Serializable
 import com.xzx.hf.prisonattendance.utils.DateUtil
 import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelFutureListener
-import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.uiThread
 import org.json.JSONException
 import org.json.JSONObject
 import com.xzx.hf.prisonattendance.utils.MyUtils
+import org.jetbrains.anko.*
 
 
 class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyListener{
@@ -82,6 +80,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
     private var faceDetectManager: FaceDetectManager? = null
 
     private var countSet = mutableSetOf<String>()
+    private var calllist = mutableListOf<String>()
     //本监区罪犯编号
     private var countCriminals = mutableListOf<String>()
     //本机点名人数
@@ -136,10 +135,15 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
     private var countNetTotal:Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         initPermisson()
         supportActionBar!!.hide()
+
+
         setContentView(R.layout.activity_video_identify)
+
+
         app  = application as MyApplication
         init()
 
@@ -218,55 +222,19 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
         }catch (e:Exception){
             Log.e("Test",e.toString())
         }
-        if (intent != null) {
-            callnameType = intent.getStringExtra("callnameType")
-            when(callnameType){
-                "3" -> {
-                    callnametype_tv.text = "点名类型:外出"
-                    //callnametype_tv.textColor = getColor(R.color.fuchsia)
-                }
-                "4" -> {
-                    callnametype_tv.text = "点名类型:收回"
-                    //callnametype_tv.textColor = getColor(R.color.crimson)
-                }
-                "1" -> {
-                    callnametype_tv.text = "点名类型:整点"
-                    //callnametype_tv.textColor = getColor(R.color.saddlebrown)
-                }
-                "2" -> {
-                    callnametype_tv.text = "点名类型:随机"
-                    //callnametype_tv.textColor = getColor(R.color.indigo)
-                }
-            }
-            cmdFrom = intent.getStringExtra("cmdFrom")
-            when(cmdFrom){
-                "main" ->{}
-                "other" ->{
-                    taskName = intent.getStringExtra("taskname")
-                    policeId = intent.getStringExtra("policeId")
-                    policeName = intent.getStringExtra("policeName")
-                    taskAppno = intent.getStringExtra("taskappno")
-                    isPolice = true
-                    /*
-                    alert("登陆民警为:$policeName(警号为$policeId)", "尊敬的警官") {
-                        positiveButton("确认开始$area 监区点名") {}
-                    }.show()*/
-                    doAsync {
-                        uiThread {
-                            police_tv.text = "民警警号:$policeId\n民警姓名:$policeName\n监区:$area"
 
-                        }
-                    }
-                    beginCount()
-                }
-            }
-        }else{
-            Log.e("PA_VideoIdentifyActivity", "intent failed")
-        }
     }
 
     private fun init() {
+
+
         hideBottomUIMenu()
+
+
+
+
+
+
         //FuelManager.instance.basePath = "http://"+ preferences.serverIP+":8080/api/prison"//"https://httpbin.org"
         //获取本地设置
         groupId = preferences.groupId!!
@@ -587,7 +555,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                 if (rgbLiveness(imageFrame, faceInfos[0]) > FaceEnvironment.LIVENESS_RGB_THRESHOLD) {
                     identity(imageFrame, faceInfos[0])
                 } else {
-                    // toast("rgb活体分数过低");
+                     toast("rgb活体分数过低")
                 }
             }
         })
@@ -607,6 +575,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
             //rgb_liveness_score_tv!!.visibility = View.VISIBLE
             //rgb_liveness_duration_tv!!.text = "RGB活体耗时：$duration"
             //rgb_liveness_score_tv!!.text = "RGB活体得分：$rgbScore"
+            //toast("RGB活体得分：$rgbScore")
         }
 
         return rgbScore
@@ -681,30 +650,35 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                     Log.e("Netty","$countCriminalsTotal")
                     displayTip("总数:$countCriminalsTotal 人", total_tv)
 
-                    val dialog = alert("登陆民警为:${user.userInfo}(警号为${user.userId})", "尊敬的警官") {
-                        positiveButton("确认开始${userPlus.area} 监区点名") {
+                    val dialog = alert("民警为:${user.userInfo}(警号为${user.userId})", "尊敬的警官") {
+                        positiveButton("确认开始点名") {
                             hideBottomUIMenu()
+                            police_tv.text = "民警警号:${user.userId}\n民警姓名:${user.userInfo}\n监区:${userPlus.area}"
+                            policeId = user.userId
+                            policeName = user.userInfo
+                            //发送开始识别Msg
+                            val json = jsonObject(
+                                "from" to "app",
+                                "to" to "all",
+                                "cmd" to "start-callname",
+                                "area" to area,
+                                "appno" to appno,
+                                "callname-type" to callnameType,
+                                "taskname" to taskName,
+                                "peopleid" to policeId,
+                                "userinfo" to policeName,
+                                "type" to "",
+                                "time" to DateUtil.nowDateTime)
+                            sendMsg(json.toString())
+                        }
+                        negativeButton("取消"){
+                            startActivity<MainActivity>()
                         }
                      }.show()
                     dialog.setCancelable(false)
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextSize(20f)
-                    police_tv.text = "民警警号:${user.userId}\n民警姓名:${user.userInfo}\n监区:${userPlus.area}"
-                    policeId = user.userId
-                    policeName = user.userInfo
-                    //发送开始识别Msg
-                    val json = jsonObject(
-                        "from" to "app",
-                        "to" to "all",
-                        "cmd" to "start-callname",
-                        "area" to area,
-                        "appno" to appno,
-                        "callname-type" to callnameType,
-                        "taskname" to taskName,
-                        "peopleid" to policeId,
-                        "userinfo" to policeName,
-                        "type" to "",
-                        "time" to DateUtil.nowDateTime)
-                    sendMsg(json.toString())
+                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextSize(20f)
+
                 }else{
                     toast("请民警先识别身份！")
                 }
@@ -825,6 +799,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
         }
         //begin_btn.visibility = View.VISIBLE
         finish_btn.visibility = View.GONE
+        calllist = countSet.toMutableList()
         //外出传递点过的人员名单
         if(callnameType == "3" || callnameType == "4"){
             countCriminals = countSet.toMutableList()
@@ -842,6 +817,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                 if (taskAppno == appno){
                     val countCrimialsList = countCriminals.toMutableList()
                     val jsonCountCrimials = jsonArray(countCrimialsList)
+                    val jsonCallList = jsonArray(calllist)
                     match_avator_iv!!.setImageBitmap(null)
                     faceDetectManager!!.stop()
                     val json = jsonObject(
@@ -856,9 +832,14 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                         "userinfo" to policeName,
                         //"total" to countNetTotal,
                         "type" to "",
+                        "calllist" to jsonCallList,
                         "crimialslist" to jsonCountCrimials,
                         "time" to DateUtil.nowDateTime)
                     //{“from”:”app”,”to”:”web”, "cmd":"end-callname",”area”:”4”, ”appno”:”1” , ”callname-type”:”1”,"time":"2018-11-01 17:48:06"}
+                    val callLog = CallLog()
+                    callLog.calllog = json.toString()
+                    callLog.updatetime = System.currentTimeMillis()
+                    callLog.save()
                     sendMsg(json.toString())
 
                     //score_tv!!.text = ""

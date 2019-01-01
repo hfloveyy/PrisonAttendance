@@ -5,6 +5,9 @@ import android.app.Application;
 import org.litepal.LitePal;
 
 public class MyApplication extends Application{
+
+
+    private long netUnavailableTime = 0;
     private int detectStatus = DETECT_IDEL;
     private String taskName = "";
     public static final int DETECT_IDEL = 0;
@@ -20,7 +23,13 @@ public class MyApplication extends Application{
     }
 
 
+    public long getNetUnavailableTime() {
+        return netUnavailableTime;
+    }
 
+    public void setNetUnavailableTime(long netUnavailableTime) {
+        this.netUnavailableTime = netUnavailableTime;
+    }
 
     public String getTaskName() {
         return taskName;

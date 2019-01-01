@@ -48,6 +48,7 @@ import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.pm.PackageManager
 import android.support.v4.app.ActivityCompat
+import android.view.Window
 import org.jetbrains.anko.indeterminateProgressDialog
 import org.jetbrains.anko.progressDialog
 
@@ -60,28 +61,45 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
     private lateinit var dialog: ProgressDialog
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        getWindow().requestFeature(Window.FEATURE_LEFT_ICON)
         setContentView(R.layout.activity_main)
+        getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.bat)
         app  = application as MyApplication
+        initPermisson()
         init()
         initBoomMenu()
+        syncDB()
 
+    }
 
-        //syncDB()
-
+    fun initPermisson(){
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(
+                this, Manifest
+                    .permission.CAMERA
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA),
+                100
+            )
+            return
+        }
     }
 
 
 
-
-
     fun init(){
-
+        /*
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager
                 .PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 100)
             return
-        }
+        }*/
 
 
         //初始化groupId
@@ -95,10 +113,10 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
         //使用1：n人脸对比
         PreferencesUtil.initPrefs(this)
         //RGB单目活体，仅使用RGB活体（单目活体），可有效防止照片翻拍，屏幕等攻击
-        PreferencesUtil.putInt("TYPE_LIVENSS", 1)//2
         //显示当前活体检测设置
-        //livnessTypeTip()
+        livnessTypeTip()
         //初始化DB
+        PreferencesUtil.putInt("TYPE_LIVENSS", 1)//2
         DBManager.getInstance().init(this)
         Log.e("Test",FaceSDKManager.initStatus.toString() )
         //初始化SDK
@@ -202,19 +220,20 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
 
         bmb2!!.buttonRadius = 90
         bmb2!!.setButtonEnum(ButtonEnum.Ham)
-        bmb2!!.setPiecePlaceEnum(PiecePlaceEnum.HAM_4)
-        bmb2!!.setButtonPlaceEnum(ButtonPlaceEnum.HAM_4)
+        bmb2!!.setPiecePlaceEnum(PiecePlaceEnum.HAM_3)
+        bmb2!!.setButtonPlaceEnum(ButtonPlaceEnum.HAM_3)
         var builder5 = BuilderManager.getHamButtonBuilder(R.string.register,R.string.register)
         bmb2!!.addBuilder(builder5)
         var builder6 = BuilderManager.getHamButtonBuilder(R.string.setting,R.string.setting)
         bmb2!!.addBuilder(builder6)
         var builder7 = BuilderManager.getHamButtonBuilder(R.string.sync_db,R.string.sync_db)
         bmb2!!.addBuilder(builder7)
-        var builder8 = BuilderManager.getHamButtonBuilder("保留按钮","保留按钮")
-        bmb2!!.addBuilder(builder8)
+        //var builder8 = BuilderManager.getHamButtonBuilder("保留按钮","保留按钮")
+        //bmb2!!.addBuilder(builder8)
         builder5.listener{
             //startActivity<UserGroupManagerActivity>()
-            startActivity<RegActivity>()
+            //startActivity<RegActivity>()
+            startActivity<UpdateListActivity>()
         }
         builder6.listener{
             //mytoast("设置Activity")
@@ -225,11 +244,7 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
             handler.post(Runnable { syncDB() })
 
         }
-        builder8.listener{
-            //mytoast("其他用途")
 
-
-        }
     }
 
 
@@ -256,9 +271,9 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
         )
 
         if (type == LivenessSettingActivity.TYPE_NO_LIVENSS) {
-            Toast.makeText(this, "当前活体策略：无活体, 请选用普通USB摄像头", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "当前活体策略：无活体", Toast.LENGTH_LONG).show()
         } else if (type == LivenessSettingActivity.TYPE_RGB_LIVENSS) {
-            Toast.makeText(this, "当前活体策略：单目RGB活体, 请选用普通USB摄像头", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "当前活体策略：单目RGB活体", Toast.LENGTH_LONG).show()
         } else if (type == LivenessSettingActivity.TYPE_RGB_IR_LIVENSS) {
             Toast.makeText(
                 this, "当前活体策略：双目RGB+IR活体, 请选用RGB+IR摄像头",
