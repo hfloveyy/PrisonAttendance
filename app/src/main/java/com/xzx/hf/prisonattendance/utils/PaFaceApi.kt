@@ -10,6 +10,18 @@ import java.io.File
 
 object PaFaceApi{
 
+    fun getUserIds(area:String?):MutableList<String>{
+        //var list = FaceApi.getInstance().getUserList(groupId)
+        val list = LitePal.where("area = ?",area).find(UserPlus::class.java)
+        var userIds = mutableListOf<String>()
+        for(userPlus in list!!){
+            var user = retUser(userPlus)
+            userIds.add(user.userId)
+
+        }
+        return userIds
+    }
+
     fun getCriminals(area:String?):MutableList<String>{
         //var list = FaceApi.getInstance().getUserList(groupId)
         val list = LitePal.where("area = ?",area).find(UserPlus::class.java)
@@ -43,21 +55,31 @@ object PaFaceApi{
     }
 
     fun isPolice(user:User):Boolean{
-        val userPlus = LitePal.where("userid = ?",user.userId).find(UserPlus::class.java)
-        if (userPlus[0].userType.toInt() == 0){
-            return true
-        }else{
+        try {
+            val userPlus = LitePal.where("userid = ?",user.userId).find(UserPlus::class.java)
+            if (userPlus[0].userType.toInt() == 0){
+                return true
+            }else{
+                return false
+            }
+        }catch (e:Exception){
             return false
         }
+
     }
     fun retUserPlus(user:User):UserPlus{
         val userPlus = LitePal.where("userid = ?",user.userId).find(UserPlus::class.java)
-            return userPlus[0]
+        return userPlus[0]
     }
 
     fun retUser(userPlus: UserPlus):User{
-        var user = FaceApi.getInstance().getUserInfo("1",userPlus.userId)
-        return user
+        try {
+            var user = FaceApi.getInstance().getUserInfo("1",userPlus.userId)
+            return user
+        }catch (e:Exception){
+            return User()
+        }
+
     }
 
     fun convertId2User(groudId:String,list:MutableList<String>):MutableList<User>{

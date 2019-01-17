@@ -21,6 +21,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.text.TextUtils;
 import android.util.Log;
+import com.bumptech.glide.Glide;
 import com.xzx.hf.prisonattendance.utils.DateUtil;
 import kotlin.Pair;
 import android.view.View;
@@ -65,11 +66,11 @@ import java.util.regex.Pattern;
 public class RegActivity extends Activity implements View.OnClickListener {
 
 
-
-
+    SharedPreferencesUtils preferences;
     public static final int SOURCE_REG = 1;
     private static final int REQUEST_CODE_PICK_IMAGE = 1000;
     private static final int REQUEST_CODE_AUTO_DETECT = 100;
+    private static final int REQUEST_CODE_IDENTIFY = 200;
     private EditText usernameEt;
     private EditText usernumEt;
     // private EditText groupIdEt;
@@ -81,6 +82,7 @@ public class RegActivity extends Activity implements View.OnClickListener {
     private Button autoDetectBtn;
     private Button fromAlbumButton;
     private Button submitButton;
+    private Button regIdentifyBtn;
 
     // 注册时使用人脸图片路径。
     private String faceImagePath;
@@ -90,9 +92,12 @@ public class RegActivity extends Activity implements View.OnClickListener {
     private String groupId = "1";
     private String typeId = "0";
     private String area = "";
+    private User usertemp;
+    String url = "";
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        SharedPreferencesUtils preferences = new SharedPreferencesUtils(this);
+        preferences = new SharedPreferencesUtils(this);
         groupId = preferences.getGroupId();
         area = preferences.getArea();
         super.onCreate(savedInstanceState);
@@ -100,7 +105,7 @@ public class RegActivity extends Activity implements View.OnClickListener {
         setContentView(R.layout.activity_reg);
 
 
-
+        regIdentifyBtn = (Button)findViewById(R.id.reg_identify_btn);
         usernameEt = (EditText) findViewById(R.id.username_et);
         usernumEt = (EditText) findViewById(R.id.usernum_et);
         //mTypeRg = (RadioGroup) findViewById(R.id.type_rg);
@@ -113,6 +118,7 @@ public class RegActivity extends Activity implements View.OnClickListener {
         autoDetectBtn.setOnClickListener(this);
         fromAlbumButton.setOnClickListener(this);
         submitButton.setOnClickListener(this);
+        regIdentifyBtn.setOnClickListener(this);
         init();
     }
 
@@ -128,7 +134,17 @@ public class RegActivity extends Activity implements View.OnClickListener {
             usernumEt.setEnabled(false);
             usernameEt.setEnabled(false);
             typeId = usertype;
+            url = "http://"+preferences.getServerIP()+":8080/Uploads/HeadPicture/" + userid + "/" + userid +".jpg";
+            /*
+            Log.e("TestFuel",url);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Glide.with(RegActivity.this).load(url).into(avatarIv);
+                }
+            });*/
         }
+
     }
 
     @Override
@@ -178,8 +194,56 @@ public class RegActivity extends Activity implements View.OnClickListener {
             if (type == R.id.crimials_rb){
                 typeId = "1";
             }*/
-
             register(faceImagePath);
+        } else if (v == regIdentifyBtn) {
+
+            Log.e("DBsync","reg identify");
+            if (faceImagePath == null){
+                toast("请先检测人脸！");
+                return;
+            }
+            Log.e("DBsync","Reg Identify!" + faceImagePath);
+            if(FaceApi.getInstance().userDelete("123456","2")) {
+                Log.e("DBsync","success delete");
+            }
+            usertemp = new User();
+            usertemp.setUserId("123456");
+            usertemp.setGroupId("2");
+            Executors.newSingleThreadExecutor().submit(new Runnable() {
+
+                @Override
+                public void run() {
+                    ARGBImg argbImg = FeatureUtils.getARGBImgFromPath(faceImagePath);
+                    byte[] bytes = new byte[2048];
+                    int ret = 0;
+                    int type = PreferencesUtil.getInt(GlobalFaceTypeModel.TYPE_MODEL, GlobalFaceTypeModel.RECOGNIZE_LIVE);
+                    if (type == GlobalFaceTypeModel.RECOGNIZE_LIVE) {
+                        ret = FaceSDKManager.getInstance().getFaceFeature().faceFeature(argbImg, bytes, 50);
+                    } else if (type == GlobalFaceTypeModel.RECOGNIZE_ID_PHOTO) {
+                        ret = FaceSDKManager.getInstance().getFaceFeature().faceFeatureForIDPhoto(argbImg, bytes, 50);
+                    }
+                    if (ret == FaceDetector.NO_FACE_DETECTED) {
+                        toast("人脸太小（必须大于最小检测人脸minFaceSize），或者人脸角度太大，人脸不是朝上");
+                    } else if (ret != -1) {
+                        Log.e("DBsync","Feature");
+                        Feature feature = new Feature();
+                        feature.setGroupId("2");
+                        feature.setUserId("123456");
+                        feature.setFeature(bytes);
+                        usertemp.getFeatureList().add(feature);
+                        if (FaceApi.getInstance().userAdd(usertemp)){
+                            Log.e("DBsync","add success");
+                            Intent intent = new Intent(RegActivity.this,RegIdentifyActivity.class);
+                            startActivityForResult(intent,REQUEST_CODE_IDENTIFY);
+                        }else {
+                            Log.e("DBsync","add failed");
+                        }
+                    } else {
+                        toast("抽取特征失败");
+                    }
+                }
+            });
+
         }
     }
 
@@ -193,7 +257,7 @@ public class RegActivity extends Activity implements View.OnClickListener {
 
             Bitmap bitmap = BitmapFactory.decodeFile(faceImagePath);
             avatarIv.setImageBitmap(bitmap);
-            submitButton.setVisibility(View.VISIBLE);
+            //submitButton.setVisibility(View.VISIBLE);
         } else if (requestCode == REQUEST_CODE_PICK_IMAGE && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 Uri uri = data.getData();
@@ -201,6 +265,15 @@ public class RegActivity extends Activity implements View.OnClickListener {
                 String filePath = imageUriToFile(uri);
                 detect(filePath);
             }
+        } else if (requestCode == REQUEST_CODE_IDENTIFY){
+            if (resultCode == Activity.RESULT_OK){
+                toast("验证成功,可以更新人脸数据！！");
+                regIdentifyBtn.setVisibility(View.GONE);
+                submitButton.setVisibility(View.VISIBLE);
+            }else if(resultCode == Activity.RESULT_CANCELED){
+                toast("验证失败,请重新检测人脸！");
+            }
+
         }
     }
 
@@ -307,19 +380,20 @@ public class RegActivity extends Activity implements View.OnClickListener {
         if (TextUtils.isEmpty(usernum)) {
             Toast.makeText(RegActivity.this, "编号不能为空", Toast.LENGTH_SHORT).show();
             return;
-        }
+        }/*
         Pattern pattern = Pattern.compile("[\\u4e00-\\u9fa5]{2,4}");
         Matcher matcher = pattern.matcher(username);
         if (!matcher.matches()) {
             Toast.makeText(RegActivity.this, "姓名由汉字组合", Toast.LENGTH_SHORT).show();
             return;
         }
-
+        */
         // final String groupId = groupIdEt.getText().toString().trim();
         if (TextUtils.isEmpty(groupId)) {
             Toast.makeText(RegActivity.this, "分组groupId为空", Toast.LENGTH_SHORT).show();
             return;
         }
+        /*
         matcher = pattern.matcher(username);
         if (!matcher.matches()) {
             Toast.makeText(RegActivity.this, "groupId由数字、字母、下划线中的一个或者多个组合", Toast.LENGTH_SHORT).show();
@@ -373,7 +447,7 @@ public class RegActivity extends Activity implements View.OnClickListener {
                     ret = FaceSDKManager.getInstance().getFaceFeature().faceFeatureForIDPhoto(argbImg, bytes, 50);
                 }
                 if (ret == FaceDetector.NO_FACE_DETECTED) {
-                    toast("人脸太小（必须打于最小检测人脸minFaceSize），或者人脸角度太大，人脸不是朝上");
+                    toast("人脸太小（必须大于最小检测人脸minFaceSize），或者人脸角度太大，人脸不是朝上");
                 } else if (ret != -1) {
                     Feature feature = new Feature();
                     feature.setGroupId(groupId);
@@ -383,25 +457,30 @@ public class RegActivity extends Activity implements View.OnClickListener {
                     feature.setCtime(user.getCtime());
                     feature.setUpdateTime(user.getUpdateTime());
                     user.getFeatureList().add(feature);
-
+                    userPlus.setFilePath(filePath);
 //                   target = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/chaixiaogangFeature2");
 //                   Utils.saveToFile(target,"feature2.txt",bytes);
                     //String ret_msg = HttpApi.INSTANCE.regUser(user,feature,userPlus,filePath);
-                    String ret_msg = HttpApi.INSTANCE.updateUser(user,feature,userPlus,filePath);
-                    Log.e("TestFuel",ret_msg);
-                    if (ret_msg.equals("success")){
-                        if (FaceApi.getInstance().userAdd(user)) {
-                            userPlus.setUpdateTime(user.getUpdateTime());
-                            userPlus.save();
-                            HttpApi.INSTANCE.syncDB();
-                            toast("更新成功！");
-                            finish();
-                        } else {
-                            toast(ret_msg);
-                        }
+                    //String ret_msg = HttpApi.INSTANCE.updateUser(user,feature,userPlus,filePath);
+                    //Log.e("TestFuel",ret_msg);
+                    //if (ret_msg.equals("success")){
+
+                    if(FaceApi.getInstance().userDelete(user.getUserId(),user.getGroupId())) {
+                            if (FaceApi.getInstance().userAdd(user)) {
+                                //userPlus.setUpdateTime(user.getUpdateTime());
+                                userPlus.setDirty("1");
+                                userPlus.save();
+                                //HttpApi.INSTANCE.syncDB();
+                                toast("更新成功！");
+                                finish();
+                            } else {
+
+                            }
+                    }
+                    /*
                     }else {
                         toast(ret_msg);
-                    }
+                    }*/
 
                 } else {
                     toast("抽取特征失败");

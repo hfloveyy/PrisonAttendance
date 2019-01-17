@@ -1,19 +1,29 @@
 package com.xzx.hf.prisonattendance;
 
 import android.app.Application;
-
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import com.xzx.hf.prisonattendance.utils.CrashHandler;
 import org.litepal.LitePal;
 
 public class MyApplication extends Application{
 
-
+    private static MyApplication mInstance;
+    private static Context context;
     private long netUnavailableTime = 0;
     private int detectStatus = DETECT_IDEL;
     private String taskName = "";
     public static final int DETECT_IDEL = 0;
     public static final int DETECT_RUNNING = 1;
     private boolean beginer = false;
-
+    private static Handler mHandler = new Handler(Looper.getMainLooper());
+    public synchronized static MyApplication getInstance(){
+        return mInstance;
+    }
+    public static void runUITask(Runnable run) {
+        mHandler.post(run);
+    }
     public boolean isBeginer() {
         return beginer;
     }
@@ -51,7 +61,13 @@ public class MyApplication extends Application{
     @Override
     public void onCreate() {
         super.onCreate();
-
+        mInstance = this;
+        context = getApplicationContext();
         LitePal.initialize(this);
+        CrashHandler.getInstance().init(this);
+    }
+
+    public static Context getContext(){
+        return context;
     }
 }

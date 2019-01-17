@@ -182,13 +182,13 @@ public class RgbDetectActivity extends Activity {
     private String filter(FaceInfo faceInfo, ImageFrame imageFrame) {
 
         String tip = "";
-        if (faceInfo.mConf < 0.6) {
+        if (faceInfo.mConf < 0.8) {
             tip = "人脸置信度太低";
             return tip;
         }
 
         float[] headPose = faceInfo.headPose;
-        if (Math.abs(headPose[0]) > 20 || Math.abs(headPose[1]) > 20 || Math.abs(headPose[2]) > 20) {
+        if (Math.abs(headPose[0]) > 15 || Math.abs(headPose[1]) > 15 || Math.abs(headPose[2]) > 15) {
             tip = "人脸置角度太大，请正对屏幕";
             return tip;
         }

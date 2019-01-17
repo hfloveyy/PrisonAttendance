@@ -15,10 +15,29 @@ import java.lang.Exception
 import android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
 import android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 import android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+import android.widget.Toast
+import com.nightonke.boommenu.Util.setText
+
+
 
 
 
 object MyUtils {
+    private var mToast: Toast? = null
+    fun showToast(context: Context, resId: Int, duration: Int) {
+        showToast(context, context.getString(resId), duration)
+    }
+
+    fun showToast(context: Context, msg: String, duration: Int) {
+
+        if (mToast == null) {
+            mToast = Toast.makeText(context, msg, duration)
+        } else {
+            mToast!!.setText(msg)
+        }
+        mToast!!.show()
+    }
+
     @TargetApi(Build.VERSION_CODES.N)
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     fun changeFlashLight(context:Context,openOrClose: Boolean) {

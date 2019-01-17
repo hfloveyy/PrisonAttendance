@@ -1,5 +1,6 @@
 package com.xzx.hf.prisonattendance.utils
 
+import android.app.ProgressDialog
 import android.content.Context
 
 import android.opengl.Visibility
@@ -21,10 +22,13 @@ import com.github.kittinunf.fuel.httpPost
 import com.github.kittinunf.result.Result
 import com.github.salomonbrys.kotson.*
 import com.google.gson.JsonObject
+import com.xzx.hf.prisonattendance.MyApplication
 import com.xzx.hf.prisonattendance.R
 import com.xzx.hf.prisonattendance.entity.UserPlus
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.anko.indeterminateProgressDialog
 import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
@@ -36,6 +40,36 @@ object HttpApi{
     init{
         Log.e("TestFuel","Initializing with object:$this")
     }
+
+    fun getCount(area: String):JSONObject{
+        val url = "/GetCount"
+        var retJson :JSONObject = JSONObject()
+        runBlocking {
+            val (request, response, result) = url.httpGet(listOf("areaid" to area.toInt()))
+                    /*
+                .requestProgress { readBytes, totalBytes ->
+                    val progress = readBytes.toFloat() / totalBytes.toFloat() * 100
+                    Log.e("TestFuel","GetCount $readBytes / $totalBytes ($progress %)")
+                }*/
+                //.header("Content-Type" to "application/json")
+                .awaitStringResponseResult()
+            val ret = response.statusCode
+            //Log.e("TestFuel",ret.toString())
+            if (ret == 200){
+                val data = result.component1()
+                //Log.e("TestFuel",data)
+                val jsonObject = JSONObject(data)
+                val ret_code = jsonObject.getString("ret_code")
+                val jsonArray = jsonObject.getJSONArray("userlist")
+                retJson = jsonArray.get(0) as JSONObject
+            }else{
+                Log.e("TestFuel","网络连接失败,未获取状态。")
+            }
+        }
+        return retJson
+    }
+
+
     fun getUserIds(area:String):MutableList<String>{
         val url = "/get_user"
         var ret_list = mutableListOf<String>()
@@ -305,7 +339,7 @@ object HttpApi{
 
                 val (request, response, result) = url.httpPost().body(data).header("Content-Type" to "application/json").awaitStringResponseResult()
                 ret = result.component1()
-                Log.e("TestFuel",ret)
+                Log.e("TestFuel","离线："+ret)
 
             }catch (e:Exception){
                 Log.e("TestFuel","Exception:$e")
@@ -315,39 +349,62 @@ object HttpApi{
         return ret
     }
 
-    fun syncDB(){
-
-        val url = "/syncdb"
-        runBlocking {
 
 
-            val (request, response, result) = url.httpGet(listOf("updatetime" to DBUtil.getUpdateTime()))
-                                                //.header("Content-Type" to "application/json")
-                                                .awaitStringResponseResult()
-            val ret = response.statusCode
-            Log.e("TestFuel","db:"+result.component1())
-            Log.e("TestFuel",ret.toString())
-            if (ret == 200){
-                val data = result.component1()
-                Log.e("TestFuel",data)
-                val jsonObject = JSONObject(data)
-                val ret_code = jsonObject.getString("ret_code")
-                val jsonArray = jsonObject.getJSONArray("userlist")
-                for (i in 0..(jsonArray.length()-1)){
-                    var obj:JSONObject = jsonArray.get(i) as JSONObject
-                    Log.e("TestFuel",obj.toString())
-                    val ret = DBUtil.updateUser(obj)
-                    if (ret){
 
-                        Log.e("DBsync","第$i 条记录插入成功！")
+    fun syncDB():Boolean{
+
+        try {
+            var ret_value = false
+            val url = "/syncdb"
+            runBlocking {
+                val userPlusList = DBUtil.getDirtyDatas()
+                for (userPlus in userPlusList){
+                    val user = PaFaceApi.retUser(userPlus)
+                    val ret_msg = updateUser(user,user.featureList[0],userPlus,userPlus.filePath)
+                    if (ret_msg == "success"){
+                        userPlus.dirty = "0"
+                        userPlus.save()
                     }
                 }
-            }else{
-                Log.e("DBSync","网络连接失败,未更新数据库。")
-            }
 
+                val (request, response, result) = url.httpGet(listOf("updatetime" to DBUtil.getUpdateTime()))
+                    .awaitStringResponseResult()
+                val ret = response.statusCode
+                Log.e("TestFuel","db:"+result.component1())
+                Log.e("TestFuel",ret.toString())
+                if (ret == 200){
+                    val thread_list = mutableListOf<Thread>()
+                    val data = result.component1()
+                    Log.e("TestFuel",data)
+                    val jsonObject = JSONObject(data)
+                    val ret_code = jsonObject.getString("ret_code")
+                    val jsonArray = jsonObject.getJSONArray("userlist")
+                    Log.e("TestFuel","List长度："+ jsonArray.length().toString())
+                    for (i in 0..(jsonArray.length()-1)){
+                        var obj:JSONObject = jsonArray.get(i) as JSONObject
+                        //Log.e("TestFuel",i.toString())
+                        //Log.e("TestFuel",obj.toString())
+                        launch {
+                            val ret = DBUtil.updateUser(obj)
+                        }
+                    }
+
+                    ret_value = true
+                }else{
+                    Log.e("DBSync","网络连接失败,未更新数据库。")
+                    ret_value = false
+                }
+
+            }
+            return ret_value
+        }catch (e:Exception){
+            return false
         }
+
     }
+
+
 
     fun getResult(taskName:String):Boolean{
         val url = "/result"

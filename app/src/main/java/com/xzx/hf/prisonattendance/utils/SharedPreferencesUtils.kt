@@ -18,9 +18,19 @@ open class SharedPreferencesUtils(context: Context) {
 
     var appno by SharedPreferenceDelegates.string(defaultValue = "101")
 
-    var area by SharedPreferenceDelegates.string(defaultValue = "1")
+    var area by SharedPreferenceDelegates.string(defaultValue = "230001009")
+
+    var all_count by SharedPreferenceDelegates.string(defaultValue = "0")
+
+    var actual_num by SharedPreferenceDelegates.string(defaultValue = "0")
+
+    var lack_num by SharedPreferenceDelegates.string(defaultValue = "0")
+
+    var netUnavailableTime by SharedPreferenceDelegates.long(System.currentTimeMillis())
 
     var currentDateTime: Long by SharedPreferenceDelegates.long(System.currentTimeMillis())
+
+    var num :Long by SharedPreferenceDelegates.long(defaultValue = 0)
 
 
     private object SharedPreferenceDelegates {

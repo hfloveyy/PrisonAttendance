@@ -60,11 +60,11 @@ class SettingActivity : AppCompatActivity() , View.OnClickListener{
 
     override fun onClick(v: View?) {
         when(v){
-            server_ip_btn -> setConfig("设置服务器地址,当前服务器地址:${preferences.serverIP}","eg:192.168.1.1", InputType.TYPE_CLASS_TEXT ,1)
-            set_groudid_btn -> setConfig("设置监区,当前监区:${preferences.area}","eg:1",InputType.TYPE_CLASS_NUMBER,2)
+            server_ip_btn -> setConfig("设置服务器地址,当前服务器地址:${preferences.serverIP}","192.168.1.1", InputType.TYPE_CLASS_TEXT ,1)
+            set_groudid_btn -> setConfig("设置监区,当前监区:${preferences.area}","",InputType.TYPE_CLASS_NUMBER,2)
             view_group_btn -> viewGroup()
-            port_btn -> setConfig("设置端口,当前端口:${preferences.port}","eg:10001",InputType.TYPE_CLASS_NUMBER,3)
-            appno_btn ->setConfig("设置APP编号,当前设备编号:${preferences.appno}","eg:101   代表一监区1号设备",InputType.TYPE_CLASS_NUMBER,4)
+            port_btn -> setConfig("设置端口,当前端口:${preferences.port}","10001",InputType.TYPE_CLASS_NUMBER,3)
+            appno_btn ->setConfig("设置APP编号,当前设备编号:${preferences.appno}","101   代表一监区1号设备",InputType.TYPE_CLASS_NUMBER,4)
         }
     }
 

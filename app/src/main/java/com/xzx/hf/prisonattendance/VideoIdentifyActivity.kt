@@ -1,10 +1,7 @@
 package com.xzx.hf.prisonattendance
 
 import android.Manifest
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.content.pm.PackageManager
 import java.io.File
 import java.util.concurrent.Executors
@@ -46,6 +43,9 @@ import android.widget.Toast
 import com.baidu.aip.face.TexturePreviewView
 import com.baidu.aip.face.camera.ICameraControl.FLASH_MODE_TORCH
 import com.bumptech.glide.Glide
+import com.bumptech.glide.MemoryCategory
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.salomonbrys.kotson.jsonArray
 import com.github.salomonbrys.kotson.jsonObject
@@ -56,21 +56,18 @@ import com.robinhood.ticker.TickerView
 import com.xzx.hf.prisonattendance.baidu.LivenessSettingActivity
 import com.xzx.hf.prisonattendance.baidu.utils.Utils
 import com.xzx.hf.prisonattendance.entity.CallLog
-import com.xzx.hf.prisonattendance.utils.PaFaceApi
 import com.xzx.hf.prisonattendance.entity.UserPlus
 import com.xzx.hf.prisonattendance.netty.NettyClient
 import com.xzx.hf.prisonattendance.netty.NettyListener
-import com.xzx.hf.prisonattendance.utils.HttpApi
-import com.xzx.hf.prisonattendance.utils.SharedPreferencesUtils
+import com.xzx.hf.prisonattendance.utils.*
 import kotlinx.android.synthetic.main.activity_video_identify.*
 import java.io.Serializable
-import com.xzx.hf.prisonattendance.utils.DateUtil
 import io.netty.channel.ChannelFuture
 import io.netty.channel.ChannelFutureListener
 import org.json.JSONException
 import org.json.JSONObject
-import com.xzx.hf.prisonattendance.utils.MyUtils
 import org.jetbrains.anko.*
+import org.litepal.LitePal
 
 
 class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyListener{
@@ -120,7 +117,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
     //Netty客户端 用于TCP长连接通信
     private lateinit var nettyClient:NettyClient
 
-
+    private lateinit var  mCustomToast: CustomToast
     private lateinit var cameraImageSource:CameraImageSource
 
     //app实例 用于获取全局变量
@@ -149,8 +146,10 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
 
         DBManager.getInstance().init(this)
         loadFeature2Memery()
+        //syncDB()
+
         connect()
-        syncDB()
+
         initCmd()
         addListener()
 
@@ -161,6 +160,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
             override fun run() {
                 try {
                     HttpApi.syncDB()
+                    loadFeature2Memery()
                 }catch (e:Exception){
                     Log.e("DBSync",e.toString())
                 }
@@ -187,16 +187,25 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                     }
                     "1" -> {
                         callnametype_tv.text = "点名类型:整点"
+                        val values = ContentValues()
+                        values.put("userworkstatus", "3")
+                        LitePal.updateAll(UserPlus::class.java,values,"userworkstatus = 1")
+
                         //callnametype_tv.textColor = getColor(R.color.saddlebrown)
                     }
                     "2" -> {
                         callnametype_tv.text = "点名类型:随机"
+                        val values = ContentValues()
+                        values.put("userworkstatus", "3")
+                        LitePal.updateAll(UserPlus::class.java,values,"userworkstatus = 1")
                         //callnametype_tv.textColor = getColor(R.color.indigo)
                     }
                 }
                 cmdFrom = intent.getStringExtra("cmdFrom")
                 when(cmdFrom){
-                    "main" ->{}
+                    "main" ->{
+                        displayTip("总数:"+intent.getStringExtra("all_count")+"人",total_tv)
+                    }
                     "other" ->{
                         taskName = intent.getStringExtra("taskname")
                         policeId = intent.getStringExtra("policeId")
@@ -227,7 +236,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
 
     private fun init() {
 
-
+        mCustomToast = CustomToast(this)
         hideBottomUIMenu()
 
 
@@ -277,7 +286,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
         //val x = cameraImageSource.cameraControl.getFlashMode()
         // 设置最小人脸，该值越小，检测距离越远，该值越大，检测性能越好。范围为80-200
         FaceSDKManager.getInstance().faceDetector.setMinFaceSize(100)
-        // FaceSDKManager.getInstance().getFaceDetector().setNumberOfThreads(4);
+        FaceSDKManager.getInstance().getFaceDetector().setNumberOfThreads(4)
         // 设置预览
         cameraImageSource.setPreviewView(preview_view)
         // 设置图片源
@@ -528,6 +537,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
             countTotal = FaceApi.getInstance().group2Facesets[groupId]?.size//人脸库总数
             countCriminals = PaFaceApi.getCriminals(area)
             countCriminalsTotal = countCriminals.size
+            Log.e("DBSync","总数:$countCriminalsTotal")
             //userList = FaceApi.getInstance().getUserList(groupId)
             displayTip("总数:$countCriminalsTotal 人", total_tv)
             //displayTip("底库人脸个数：$countTotal", facesets_count_tv)
@@ -553,8 +563,12 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
             } else if (liveType == LivenessSettingActivity.TYPE_RGB_LIVENSS) {
 
                 if (rgbLiveness(imageFrame, faceInfos[0]) > FaceEnvironment.LIVENESS_RGB_THRESHOLD) {
+                    if (mCustomToast != null)
+                        mCustomToast.hide()
                     identity(imageFrame, faceInfos[0])
                 } else {
+                    //if (mCustomToast != null)
+                    //    mCustomToast.alwaysShow("rgb活体分数过低")
                      toast("rgb活体分数过低")
                 }
             }
@@ -608,9 +622,9 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
             identifyRet = FaceApi.getInstance().identityForIDPhoto(argb, rows, cols, landmarks, groupId)
         }
         if (identifyRet != null) {
-            synchronized(this){
+            //synchronized(this){
                 displayUserOfMaxScore(identifyRet.userId, identifyRet.score)
-            }
+            //}
         }
         identityStatus = IDENTITY_IDLE
         //displayTip("特征抽取对比耗时:" + (System.currentTimeMillis() - starttime), feature_duration_tv)
@@ -631,6 +645,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                 //score_tv!!.text = ""
                 //match_user_tv!!.text = ""
                 //match_avator_iv!!.setImageBitmap(null)
+                toast("未知人员！")
                 return@Runnable
             }
 
@@ -641,7 +656,9 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
             if (isPolice == false){
                 isPolice = PaFaceApi.isPolice(user)
                 if (isPolice){
-                    taskName = area +"-"+callnameType+"-"+ appno +"-"+ DateUtil.nowDateTime
+                    MyUtils.playVoice(app.applicationContext)
+//area +"-"+callnameType+"-"+ appno +"-"+ DateUtil.nowDateTime
+                    Log.e("TestFuel","TaskName:" + taskName)
                     val userPlus = PaFaceApi.retUserPlus(user)
                     area = userPlus.area
                     preferences.area = area
@@ -650,10 +667,13 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                     Log.e("Netty","$countCriminalsTotal")
                     displayTip("总数:$countCriminalsTotal 人", total_tv)
 
-                    val dialog = alert("民警为:${user.userInfo}(警号为${user.userId})", "尊敬的警官") {
+                    val dialog = alert("警员为:${user.userInfo}(警号为${user.userId})", "尊敬的警官") {
                         positiveButton("确认开始点名") {
                             hideBottomUIMenu()
-                            police_tv.text = "民警警号:${user.userId}\n民警姓名:${user.userInfo}\n监区:${userPlus.area}"
+                            preferences.num += 1
+                            taskName = DateUtil.nowDate + area.substring(7,9) + (appno.toLong()*10000 + preferences.num).toString()
+                            val jsonCallList = jsonArray(calllist)
+                            police_tv.text = "警员警号:${user.userId}\n警员姓名:${user.userInfo}\n监区:${userPlus.area}"
                             policeId = user.userId
                             policeName = user.userInfo
                             //发送开始识别Msg
@@ -663,13 +683,20 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                                 "cmd" to "start-callname",
                                 "area" to area,
                                 "appno" to appno,
-                                "callname-type" to callnameType,
+                                "callnametype" to callnameType,
                                 "taskname" to taskName,
                                 "peopleid" to policeId,
                                 "userinfo" to policeName,
+                                "calllist" to jsonCallList,
                                 "type" to "",
                                 "time" to DateUtil.nowDateTime)
+
                             sendMsg(json.toString())
+                            if (callnameType == "1"||callnameType == "2"){
+                                val values = ContentValues()
+                                values.put("userworkstatus", "3")
+                                LitePal.updateAll(UserPlus::class.java,values,"userworkstatus = 1")
+                            }
                         }
                         negativeButton("取消"){
                             startActivity<MainActivity>()
@@ -683,42 +710,61 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                     toast("请民警先识别身份！")
                 }
             }
-            if (PaFaceApi.retUserPlus(user).area != area){
+
+
+            val userPlus = PaFaceApi.retUserPlus(user)
+            if (userPlus.area != area){
                 toast("非本监区人员")
                 return@Runnable
             }
 
             if (isPolice && !PaFaceApi.isPolice(user)){
                 if (countSet.contains(userId)){
-                    toast("已点过！")
+
+                    toast("$userId 已点过！")
                     return@Runnable
                 }else{
+                    if (callnameType == "1"||callnameType == "2"||callnameType == "4") {
+                        userPlus.userWorkStatus = "1"
+                    } else if (callnameType == "3"){
+                        userPlus.userWorkStatus = "3"
+                    }
+                    userPlus.save()
                     countSet.add(userId)
                     countInt += 1
                     countNetTotal += 1
                     count_tv.text = "本机已点人数:$countInt 人"
                     count_all_tv.text = "本次已点:$countNetTotal 人"
-                    //{“from”:”app”,”to”:”all”, "cmd":"callname-success",”area”:”4”, ”appno”:”1” , ”callname-type”:”1”,”peopleid”:”xxxxxx”,"time":"2018-11-01 17:48:06"}
+                    val jsonCallList = jsonArray(calllist)
+                    //{“from”:”app”,”to”:”all”, "cmd":"callname-success",”area”:”4”, ”appno”:”1” , ”callnametype”:”1”,”peopleid”:”xxxxxx”,"time":"2018-11-01 17:48:06"}
                     val json = jsonObject(
                         "from" to "app",
                         "to" to "all",
                         "cmd" to "callname-success",
                         "area" to area,
                         "appno" to appno,
-                        "callname-type" to callnameType,
+                        "callnametype" to callnameType,
                         "peopleid" to userId,
                         "userinfo" to user.userInfo,
                         "taskname" to taskName,
                         "type" to "1",//0 警察 1 罪犯
                         "total" to countInt.toString(),
+                        "calllist" to jsonCallList,
                         "time" to DateUtil.nowDateTime)
+                    Log.e("TestFuel",json.toString())
                     sendMsg(json.toString())
+
+
 
                 }
 
                 match_user_tv!!.text = "编号:${user.userId}\n姓名:${user.userInfo}"
                 //在线加载图片
-                Glide.with(this@VideoIdentityActivity).load("http://${preferences.serverIP}:8080/Uploads/HeadPicture/${user.userId}/${user.userId}.jpg").into(match_avator_iv)
+                val requestOption = RequestOptions()
+                requestOption.diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true)
+                requestOption.error(R.drawable.avatar)
+                Glide.with(this@VideoIdentityActivity).applyDefaultRequestOptions(requestOption)
+                    .load("http://${preferences.serverIP}:8080/Uploads/HeadPicture/${user.userId}/${user.userId}.jpg").into(match_avator_iv)
                 /*
                 val featureList = user.featureList
                 if (featureList != null && featureList.size > 0) {
@@ -737,7 +783,13 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
     }
 
     private fun toast(text: String) {
-        handler.post { Toast.makeText(this@VideoIdentityActivity, text, Toast.LENGTH_SHORT).show() }
+        //handler.post {
+            //Toast.makeText(this@VideoIdentityActivity, text, Toast.LENGTH_SHORT).show()
+            MyUtils.showToast(this@VideoIdentityActivity, text, Toast.LENGTH_SHORT)
+            //mCustomToast.alwaysShow(text)
+
+        //}
+
     }
 
     //同步显示信息
@@ -750,6 +802,10 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
 
     //发送消息 to MsgServer
     private fun sendMsg(msg:String){
+        val callLog = CallLog()
+        callLog.calllog = msg
+        callLog.updatetime = System.currentTimeMillis()
+        callLog.save()
         MyUtils.playVoice(app.applicationContext)
         Thread(object : Runnable{
             override fun run() {
@@ -778,7 +834,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
 
     //开始点名
     private fun beginCount(){
-
+        MyUtils.playVoice(app.applicationContext)
         //begin_btn.visibility = View.GONE
         finish_btn.visibility = View.VISIBLE
         police_tv.text = ""
@@ -811,7 +867,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
         //重置，结束点名
 
         val dialog = alert("点名结束！本机已点人数$countInt", "$area 监区") {
-            negativeButton("结束点名") {
+            positiveButton("结束点名") {
 
                 hideBottomUIMenu()
                 if (taskAppno == appno){
@@ -826,7 +882,7 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                         "cmd" to "end-callname",
                         "area" to area,
                         "appno" to appno,
-                        "callname-type" to callnameType,
+                        "callnametype" to callnameType,
                         "taskname" to taskName,
                         "peopleid" to policeId,
                         "userinfo" to policeName,
@@ -835,11 +891,8 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                         "calllist" to jsonCallList,
                         "crimialslist" to jsonCountCrimials,
                         "time" to DateUtil.nowDateTime)
-                    //{“from”:”app”,”to”:”web”, "cmd":"end-callname",”area”:”4”, ”appno”:”1” , ”callname-type”:”1”,"time":"2018-11-01 17:48:06"}
-                    val callLog = CallLog()
-                    callLog.calllog = json.toString()
-                    callLog.updatetime = System.currentTimeMillis()
-                    callLog.save()
+                    //{“from”:”app”,”to”:”web”, "cmd":"end-callname",”area”:”4”, ”appno”:”1” , ”callnametype”:”1”,"time":"2018-11-01 17:48:06"}
+
                     sendMsg(json.toString())
 
                     //score_tv!!.text = ""
@@ -856,14 +909,15 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                         "crimialslist" to countCriminals as Serializable,
                         "taskName" to taskName,
                         "total" to countNetTotal.toString(),
-                        "callname-type" to callnameType,
+                        "callnametype" to callnameType,
                         "appno" to appno
                     )
                 }else{
                     faceDetectManager!!.stop()
                     //begin_btn.visibility = View.GONE
                     finish_btn.visibility = View.GONE
-                    toast("等待主机结束点名！")
+                    //toast("等待主机结束点名！")
+                    alert ("请等待主机结束点名！！","提示"){  }.show().setCancelable(false)
                     //startActivity<MainActivity>()
                 }
 
@@ -873,6 +927,10 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                 //total_tv!!.text = "总数:$countTotal 人"
 
                 //startActivity<MainActivity>()
+            }
+            negativeButton("继续点名"){
+                finish_btn.visibility = View.VISIBLE
+                hideBottomUIMenu()
             }
         }.show()
         dialog.setCancelable(false)

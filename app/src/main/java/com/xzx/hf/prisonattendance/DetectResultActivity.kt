@@ -39,6 +39,7 @@ import org.jetbrains.anko.textColor
 import org.json.JSONArray
 import org.json.JSONObject
 import com.github.salomonbrys.kotson.jsonArray
+import com.xzx.hf.prisonattendance.entity.UserPlus
 
 class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
     private val preferences by lazy { SharedPreferencesUtils(this) }
@@ -57,7 +58,7 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
     private var saveJson = JSONObject()
     private var saveArray = JSONArray()
     private val statusList = listOf<String>("正常","看病","接见","其他")
-
+    private val userList = mutableListOf<User>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,7 +83,7 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
                 area = intent.getStringExtra("area")
                 taskName = intent.getStringExtra("taskName")
                 //total = intent.getStringExtra("total")
-                callnameType = intent.getStringExtra("callname-type")
+                callnameType = intent.getStringExtra("callnametype")
                 appno = intent.getStringExtra("appno")
                 Log.e("TestFuel","CallNameType:"+callnameType)
                 saveJson.put("policeId",policeId)
@@ -103,18 +104,27 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
 
                         calltype_tv.textColor = getColor(R.color.crimson)
                         //Log.e("TestFuel","MSG:"+msg)
-                        val retmsg = HttpApi.postDataSync(msg,"/callReturn")
-                        Log.e("TestFuel","Ret:"+retmsg)
-                        val json = JSONObject(retmsg)
-                        //Log.e("TestFuel",json.toString())
-                        val ulist = json.get("userlist") as JSONArray
-                        for (i in 0..(ulist.length() - 1)) {
-                            val item = ulist.getJSONObject(i)
-                            Log.e("TestFuel","User:"+item.get("userid").toString())
-                            val userid = item.get("userid").toString()
-                            crimialslist.add(userid)
-                            // Your code here
+                        try {
+                            val retmsg = HttpApi.postDataSync(msg,"/callReturn")
+                            Log.e("TestFuel","Ret:"+retmsg)
+                            val json = JSONObject(retmsg)
+                            //Log.e("TestFuel",json.toString())
+                            val ulist = json.get("userlist") as JSONArray
+                            for (i in 0..(ulist.length() - 1)) {
+                                val item = ulist.getJSONObject(i)
+                                Log.e("TestFuel","User:"+item.get("userid").toString())
+                                val userid = item.get("userid").toString()
+                                crimialslist.add(userid)
+                                // Your code here
+                            }
+                        }catch (e:Exception){
+                            val ulist = LitePal.where("usertype = 1 and userworkstatus = 3 and area = ?",preferences.area).find(UserPlus::class.java)
+                            for (u in ulist){
+                                crimialslist.add(u.userId)
+                            }
                         }
+
+
                         calltype_tv.text = if(crimialslist.size>0){"缺少服刑人员列表(${crimialslist.size} 人)"}else{"服刑人员全部已收回！"}
                         //
 
@@ -189,14 +199,14 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
                 if (userList.size > position) {
                     val user = userList[position]
 
-                    selector("请选择状态",statusList){ds, i ->
+                    selector("请选择状态：",statusList){ds, i ->
                         view.user_status_tv.text = "当前状态："+statusList[i]
                         val status = when(statusList[i]){
                             "正常" -> "1"
-                            "看病" -> "2"
-                            "接见" -> "3"
+                            "就医" -> "2"
+                            "会见" -> "3"
                             "其他" -> "4"
-                            else -> "5"
+                            else -> "1"
                         }
                         /*
                         var json = jsonObject(
@@ -261,10 +271,12 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
             var userId: TextView
             var userInfo: TextView
             var image: ImageView
+            var userstatus:TextView
             init {
                 userId = view.findViewById<View>(R.id.user_id_tv) as TextView
                 userInfo = view.findViewById<View>(R.id.user_info_tv) as TextView
                 image = view.findViewById(R.id.user_image) as ImageView
+                userstatus = view.findViewById(R.id.user_status_tv) as TextView
             }
         }
 
@@ -291,8 +303,25 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val user = userList[position]
+            val userPlus = PaFaceApi.retUserPlus(user)
+            val status = when(userPlus.userStatus){
+                "1" -> "正常"
+                "2" -> "就医"
+                "3" -> "会见"
+                "4" -> "其他"
+                else -> "1"
+            }
+            val color = when(userPlus.userStatus){
+                "1" -> getColor(R.color.blue)
+                "2" -> getColor(R.color.red)
+                "3" -> getColor(R.color.green)
+                "4" -> getColor(R.color.orange)
+                else -> getColor(R.color.black)
+            }
             holder.userId.text = "服刑人员编号: " + user.userId
-            holder.userInfo.text = "服刑人员姓名：" + user.userInfo
+            holder.userInfo.text = "服刑人员姓名: " + user.userInfo
+            holder.userstatus.text = status
+            holder.userstatus.textColor = color
             //Glide.with(this@DetectResultActivity).load("http://${preferences.serverIP}:8080/Uploads/HeadPicture/${user.userId}/${user.userId}.jpg").into(holder.image)
 
             if (mOnItemClickListener != null) {

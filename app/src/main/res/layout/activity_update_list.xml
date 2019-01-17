@@ -30,6 +30,9 @@
                 android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:layout_height="60dp"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:textSize="20dp"
                 android:text="警察"/>
         <com.github.rubensousa.raiflatbutton.RaiflatButton
                 android:id="@+id/criminal_btn"
@@ -37,7 +40,10 @@
                 android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:layout_height="60dp"
-                android:text="服刑人员"/>
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:textSize="20dp"
+                android:text="服刑人员(√)"/>
     </LinearLayout>
     <android.support.v7.widget.RecyclerView
             xmlns:android="http://schemas.android.com/apk/res/android"

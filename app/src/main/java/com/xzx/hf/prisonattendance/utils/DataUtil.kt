@@ -19,7 +19,7 @@ object DateUtil {
     //只返回日期字符串
     val nowDate: String
     get() {
-        val sdf = SimpleDateFormat("yyyy-MM-dd")
+        val sdf = SimpleDateFormat("yyyyMMdd")
         return sdf.format(Date())
     }
 
@@ -43,5 +43,10 @@ object DateUtil {
     val sdf = if (!ft.isEmpty()) SimpleDateFormat(ft)
         else SimpleDateFormat("yyyyMMddHHmmss")
         return sdf.format(Date())
+    }
+
+    fun date2String(date: Date, pattern: String): String {
+        val sdf = SimpleDateFormat(pattern, Locale.getDefault())
+        return sdf.format(date)
     }
 }

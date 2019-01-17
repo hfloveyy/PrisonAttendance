@@ -9,6 +9,55 @@
         tools:context=".MainActivity" tools:layout_editor_absoluteY="81dp"
         android:background="@drawable/bg">
 
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="467dp"
+            android:orientation="vertical"
+            android:gravity="bottom">
+
+        <TextView android:id="@+id/status_tv"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_margin="5dp"
+                  android:gravity="center_vertical"
+                  android:textSize="20dp"
+                  android:text="设备状态:"
+        />
+        <TextView android:id="@+id/area_tv"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_margin="5dp"
+                  android:gravity="center_vertical"
+                  android:textSize="20dp"
+                  android:text="监区:"
+        />
+        <TextView android:id="@+id/appno_tv"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_margin="5dp"
+                  android:gravity="center_vertical"
+                  android:textSize="20dp"
+                  android:text="设备编号:"
+        />
+        <TextView android:id="@+id/all_count_tv"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_margin="5dp"
+                  android:text="在押总数:"
+                  android:textSize="20dp"/>
+        <TextView android:id="@+id/actual_num_tv"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_margin="5dp"
+                  android:text="工作区现场人数:"
+                  android:textSize="20dp"/>
+        <TextView android:id="@+id/lack_num_tv"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_margin="5dp"
+                  android:text="离开工作区人数:"
+                  android:textSize="20dp"/>
+    </LinearLayout>
 
     <android.support.constraint.ConstraintLayout
             android:layout_width="163dp"
@@ -16,7 +65,6 @@
             android:id="@+id/constraintLayout"
             app:layout_constraintBottom_toBottomOf="parent"
             android:layout_marginEnd="4dp" app:layout_constraintEnd_toEndOf="parent">
-
         <com.nightonke.boommenu.BoomMenuButton
                 android:id="@+id/bmb2"
                 android:layout_width="wrap_content"
@@ -34,6 +82,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginBottom="104dp">
             <TextView
+                    android:id="@+id/other_tv"
                     android:layout_width="40dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
@@ -69,5 +118,6 @@
                     android:textColor="@android:color/white"/>
         </com.nightonke.boommenu.BoomMenuButton>
     </android.support.constraint.ConstraintLayout>
+
 
 </android.support.constraint.ConstraintLayout>

@@ -25,16 +25,39 @@ object DBUtil{
 
     }
 
+    fun getDirtyDatas():MutableList<UserPlus>{
+        try {
+            val flag = "1"
+            val objs = mutableListOf<UserPlus>()
+            val cursor = LitePal.findBySQL("select * from userplus where dirty = $flag")
+            cursor.move(1)
+            for (i in 0..((cursor.count)-1)){
+                val userPlus = UserPlus()
+                userPlus.userId = cursor.getString(cursor.getColumnIndex("userid"))
+                userPlus.area = cursor.getString(cursor.getColumnIndex("area"))
+                userPlus.userType = cursor.getString(cursor.getColumnIndex("usertype"))
+                userPlus.filePath = cursor.getString(cursor.getColumnIndex("filepath"))
+                cursor.move(1)
+                objs.add(userPlus)
+            }
+            return objs
+        }catch (e:Exception){
+            Log.e("DBsync",e.toString())
+            return mutableListOf<UserPlus>()
+        }
+    }
+
     fun getCallLog(time:Long):MutableList<String>{
         try {
             //val logs = LitePal.where("updatetime > ",time.toString()).order("updatetime").find<CallLog>()
             val logs = mutableListOf<String>()
-            val cursor = LitePal.findBySQL("select * from calllog where updatetime > $time")
+            val cursor = LitePal.findBySQL("select * from calllog where updatetime > $time order by updatetime")
             cursor.move(1)
             //val logs = cursor.getString(cursor.getColumnIndex("calllog"))
 
             for (i in 0..((cursor.count)-1)){
                 val log = cursor.getString(cursor.getColumnIndex("calllog"))
+                cursor.move(1)
                 logs.add(log)
             }
 
@@ -62,7 +85,8 @@ object DBUtil{
             userPlus.userId = json.getString("user_id")
             userPlus.updateTime = json.getLong("update_time")
             userPlus.area = json.getString("area")
-            //userPlus.userStatus = json.getString("userstatus")
+            userPlus.userStatus = json.getString("userstatus")
+            userPlus.userWorkStatus = json.getString("userWorkStatus")
             feature.userId = json.getString("user_id")
             feature.groupId = "1"//json.getString("group_id")
             feature.faceToken = json.getString("face_token")
@@ -72,24 +96,34 @@ object DBUtil{
             feature.updateTime = json.getLong("update_time")
 
             user.featureList.add(feature)
-            if (FaceApi.getInstance().userDelete(user.userId,user.groupId)){
-                val ret = LitePal.deleteAll(UserPlus::class.java,"userid = ?" , user.userId)
-                Log.e("DBsync","${user.userId}删除$ret 条数据！")
-                if (PaFaceApi.deleteFaceImage(user.userId)){
-                    Log.e("DBsync","${user.userId}删除人脸文件！")
+            synchronized(this){
+                if (FaceApi.getInstance().userDelete(user.userId,user.groupId)){
+                    val ret = LitePal.deleteAll(UserPlus::class.java,"userid = ?" , user.userId)
+                    Log.e("DBsync","${user.userId}删除$ret 条数据！")
+                    if (PaFaceApi.deleteFaceImage(user.userId)){
+                        Log.e("DBsync","${user.userId}删除人脸文件！")
+                    }
+                }
+
+                if (FaceApi.getInstance().getUserInfo("1",user.userId) == null ){
+                    if (FaceApi.getInstance().userAdd(user)) {
+                        userPlus.updateTime = user.updateTime
+                        userPlus.save()
+                        Log.e("DBsync","${user.userId}insert success")
+
+                    } else {
+                        Log.e("DBsync","${user.userId}insert failure")
+                    }
                 }
             }
-            if (FaceApi.getInstance().userAdd(user)) {
-                userPlus.updateTime = user.updateTime
-                userPlus.save()
-                Log.e("DBsync","insert success")
-                return true
-            } else {
-                Log.e("DBsync","insert failure")
-                return false
-            }
+
+            return true
+
         }catch (e:Exception){
             Log.e("DBSync",e.toString())
+            val user = User()
+            user.userId = json.getString("user_id")
+            FaceApi.getInstance().userDelete(user.userId,"1")
             return false
         }
 
