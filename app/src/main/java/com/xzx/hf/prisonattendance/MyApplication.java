@@ -12,10 +12,10 @@ public class MyApplication extends Application{
     private static MyApplication mInstance;
     private static Context context;
     private long netUnavailableTime = 0;
-    private int detectStatus = DETECT_IDEL;
+    private int detectStatus = DETECT_IDEL;//检测状态为空隙
     private String taskName = "";
-    public static final int DETECT_IDEL = 0;
-    public static final int DETECT_RUNNING = 1;
+    public static final int DETECT_IDEL = 0;//检测状态为空隙
+    public static final int DETECT_RUNNING = 1;//检测状态为运行中
     private boolean beginer = false;
     private static Handler mHandler = new Handler(Looper.getMainLooper());
     public synchronized static MyApplication getInstance(){
@@ -63,7 +63,9 @@ public class MyApplication extends Application{
         super.onCreate();
         mInstance = this;
         context = getApplicationContext();
+        //初始化LitePal
         LitePal.initialize(this);
+        //初始化异常日志
         CrashHandler.getInstance().init(this);
     }
 

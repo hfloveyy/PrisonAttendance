@@ -56,7 +56,7 @@ import com.xzx.hf.prisonattendance.netty.NettyListener
 import com.xzx.hf.prisonattendance.utils.DBUtil
 import org.jetbrains.anko.*
 
-
+//主界面
 class MainActivity : AppCompatActivity() , OnBMClickListener{
     private val preferences by lazy { SharedPreferencesUtils(this) }
     private var appno:String = ""
@@ -73,15 +73,18 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
         setContentView(R.layout.activity_main)
         getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON, R.drawable.bat)
         app  = application as MyApplication
+        //初始化权限
         initPermisson()
+        //初始化Boom菜单
         initBoomMenu()
         init()
+        //初始化广播
         val mFilter = IntentFilter()
         mFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
         registerReceiver(netReceiver, mFilter)
     }
 
-
+    //handler
     val handler = object:Handler(Looper.getMainLooper()){
         override fun handleMessage(msg:Message){
             super.handleMessage(msg)
@@ -142,7 +145,7 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
 
 
 
-    //主界面显示
+    //主界面更新状态信息
     fun syncStatus(){
         try {
             syncDB()
@@ -182,7 +185,7 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
 
 
     }
-    //离线更新界面
+    //离线更新状态信息
     fun syncStatusOffLine(){
         try {
             Log.e("TestFuel","SyncStatus")
@@ -227,17 +230,10 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
             )
             return
         }
-        /*
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.System.canWrite(this)) {
-                val intent = Intent(android.provider.Settings.ACTION_MANAGE_WRITE_SETTINGS)
-                intent.setData(Uri.parse("package:" + this.getPackageName()))
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(intent)
-            }
-        }*/
     }
 
+
+    //禁用Back键
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
         if(event!!.keyCode == KeyEvent.KEYCODE_BACK ) {
             //do something.
@@ -248,16 +244,8 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
         }
     }
 
+    //初始化
     fun init(){
-        /*
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager
-                .PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 100)
-            return
-        }*/
-
-
         //初始化groupId
         preferences.groupId = "1"
         appno = preferences.appno!!
@@ -277,20 +265,12 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
         Log.e("TestFuel","FaceSDKStatus:"+FaceSDKManager.initStatus.toString() )
 
 
-
+        //启动服务
         val serviceClassName = NettyService::class.java
         val intent = Intent(applicationContext, serviceClassName)
-        //startService(intent)
+
+        //初始化百度人脸库
         if (FaceSDKManager.initStatus != FaceSDKManager.SDK_INITED){
-            /*
-            val mConnectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val mNetworkInfo = mConnectivityManager.getActiveNetworkInfo()
-            if (mNetworkInfo == null) {
-                mytoast("网络不可用,无法初始化,请到有网络的位置重启应用！！")
-                //android.os.Process.killProcess(android.os.Process.myPid())    //获取PID
-                //System.exit(0)
-                finish()
-            }*/
             dialog = indeterminateProgressDialog("正在登陆点名系统", "请稍候")
             dialog.show()
             dialog.setCancelable(false)
@@ -315,6 +295,7 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
                 }
             })
         }
+        //如果Service 启动了
         if (!isServiceRunning(serviceClassName)) {
             // Start the service
             startService(intent)
@@ -338,6 +319,8 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
         //syncDB()
     }
 
+
+    //返回主界面
     override fun onResume() {
         super.onResume()
         Log.e("TestFuel","返回Resume")
@@ -359,7 +342,7 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
     }
 
 
-
+    //返回Service是否运行
     private fun isServiceRunning(serviceClass: Class<*>): Boolean {
         val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
 
@@ -373,6 +356,7 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
         return false
     }
 
+    //同步数据库
     fun syncDB(){
         val dialog_temp = indeterminateProgressDialog("正在更新数据库！", "请稍候！")
         dialog_temp.show()
@@ -409,7 +393,7 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
     }
 
 
-
+    //初始化Boom菜单
     fun initBoomMenu(){
         bmb!!.buttonRadius = 90 //调整按钮尺寸
         bmb!!.setButtonEnum(ButtonEnum.Ham)
@@ -460,7 +444,7 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
     }
 
 
-
+    //响应Boom菜单按钮
     override fun onBoomButtonClick(index: Int){
         //val taskName = area + index.toString() + appno
         //app.detectStatus = MyApplication.DETECT_RUNNING
@@ -470,6 +454,8 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
             "cmdFrom" to "main","all_count" to all_count
         )
     }
+
+    //toast
     private fun mytoast(text: String) {
         handler.post(Runnable { Toast.makeText(this@MainActivity, text, Toast.LENGTH_LONG).show() })
     }
@@ -479,6 +465,7 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
         unregisterReceiver(netReceiver)
     }
 
+    //活体策略提示
     private fun livnessTypeTip() {
         val type = PreferencesUtil.getInt(
             LivenessSettingActivity.TYPE_LIVENSS, LivenessSettingActivity
@@ -499,28 +486,24 @@ class MainActivity : AppCompatActivity() , OnBMClickListener{
         }
     }
 
+
+    //广播监听网络变化
     inner class NetReceiver : BroadcastReceiver(){
-        //private val preferences by lazy { SharedPreferencesUtils(MyApplication.getContext()) }
-
-
-
         override fun onReceive(context: Context?, intent: Intent?) {
             try {
                 if (context != null) {
                     val app = context.applicationContext as MyApplication
                     val mConnectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
                     val mNetworkInfo = mConnectivityManager.getActiveNetworkInfo()
+                    //连接网络
                     if (mNetworkInfo != null && notFirst) {
                         Log.e("TestFuel","更新！")
                         syncStatus()
                         status_tv.text = "设备状态:在线"
-                        //preferences.netUnavailableTime = System.currentTimeMillis()
-                        //Toast.makeText(context, "网络可用", Toast.LENGTH_LONG).show()
                     }else{
                         status_tv.text = "设备状态:离线"
                         syncStatusOffLine()
                         Log.e("TestFuel","网络不可用")
-                        //preferences.netUnavailableTime = System.currentTimeMillis()
                         Toast.makeText(context, "网络不可用", Toast.LENGTH_LONG).show()
                     }
                 }

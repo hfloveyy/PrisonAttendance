@@ -1,5 +1,6 @@
 package com.xzx.hf.prisonattendance.entity;
 
+import org.litepal.annotation.Column;
 import org.litepal.crud.LitePalSupport;
 
 public class UserPlus extends LitePalSupport {
@@ -7,6 +8,9 @@ public class UserPlus extends LitePalSupport {
     private Long updateTime = 0L;
     private String area = "";
 
+
+
+    @Column(unique = true, defaultValue = "unknown")
     private String userId = "";
     private String userStatus = "1";
 

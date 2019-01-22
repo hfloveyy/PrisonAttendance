@@ -67,6 +67,8 @@ class UpdateListActivity : AppCompatActivity(){
             criminal_btn.backgroundColor = getResources().getColor(R.color.hotpink)
             criminal_btn.textColor = getResources().getColor(R.color.white)
 
+
+            //搜索框
             searchView.searchWay = object:SearchView.SearchWay<User>() {
 
                 override fun getData(): MutableList<User> {
@@ -135,6 +137,8 @@ class UpdateListActivity : AppCompatActivity(){
         user_list_rv!!.setAdapter(adapter)
     }
 
+
+    //Activity返回的Result
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         try {
@@ -165,6 +169,7 @@ class UpdateListActivity : AppCompatActivity(){
 
 
     }
+    //增加监听器
     private fun addListener() {
         adapter!!.setOnItemClickLitsener(object : OnItemClickListener {
 
@@ -195,6 +200,8 @@ class UpdateListActivity : AppCompatActivity(){
         })
     }
 
+
+    //适配器
     inner class UserAdapter : RecyclerView.Adapter<UserAdapter.ViewHolder>() {
 
         private var userList: MutableList<User> = mutableListOf()

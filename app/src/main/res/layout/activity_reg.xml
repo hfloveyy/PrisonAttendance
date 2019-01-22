@@ -8,46 +8,8 @@
     <LinearLayout android:layout_width="match_parent"
                   android:layout_height="match_parent"
                   android:orientation="vertical"
-                  android:layout_margin="60dp"
+                  android:layout_margin="10dp"
                   android:gravity="center_horizontal">
-        <!--
-        <EditText
-                android:id="@+id/group_id_et"
-                android:layout_width="250dp"
-                android:layout_height="50dp"
-                android:hint="请输入要添加到组(groupId)"/>
-
-        <Spinner
-                android:layout_width="250dp"
-                android:layout_height="wrap_content"
-                android:id="@+id/spinner"/>
-        <Spinner
-                android:spinnerMode="dialog"
-                android:layout_width="250dp"
-                android:layout_height="wrap_content"
-                android:id="@+id/spinner_type"/>
-
-
-        <RadioGroup
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/type_rg"
-                android:orientation="horizontal">
-        <RadioButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="警察"
-                android:id="@+id/police_rb"/>
-        <RadioButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="服刑人员"
-                android:id="@+id/crimials_rb"
-                android:checked="true"
-        />
-
-        </RadioGroup>
--->
         <EditText
                 android:id="@+id/usernum_et"
                 android:layout_width="250dp"
@@ -69,26 +31,31 @@
                 android:id="@+id/auto_detect_btn"
                 style="@style/Base.Widget.AppCompat.Button.Colored"
                 android:layout_width="250dp"
-                android:layout_height="48dp"
+                android:layout_height="55dp"
+                android:layout_margin="6dp"
                 android:text="自动检测"/>
 
         <com.github.rubensousa.raiflatbutton.RaiflatButton
                 android:id="@+id/submit_btn"
                 style="@style/Base.Widget.AppCompat.Button.Colored"
                 android:layout_width="250dp"
-                android:layout_height="48dp"
+                android:layout_height="55dp"
+                android:layout_margin="6dp"
                 android:text="更新"/>
         <com.github.rubensousa.raiflatbutton.RaiflatButton
                 android:id="@+id/reg_identify_btn"
                 style="@style/Base.Widget.AppCompat.Button.Colored"
                 android:layout_width="250dp"
-                android:layout_height="48dp"
+                android:layout_height="55dp"
+                android:layout_margin="6dp"
                 android:text="验证人脸"/>
+
         <com.github.rubensousa.raiflatbutton.RaiflatButton
                 android:id="@+id/pick_from_album_btn"
                 style="@style/Base.Widget.AppCompat.Button.Colored"
                 android:layout_width="250dp"
-                android:layout_height="48dp"
+                android:layout_height="55dp"
+                android:layout_margin="6dp"
                 android:text="从相册选取"/>
     </LinearLayout>
 

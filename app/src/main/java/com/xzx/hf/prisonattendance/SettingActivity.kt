@@ -17,12 +17,14 @@ import com.xzx.hf.prisonattendance.utils.SharedPreferencesUtils
 import kotlinx.android.synthetic.main.activity_setting.*
 import org.jetbrains.anko.*
 import org.jetbrains.anko.design.textInputLayout
-
+//设置页面
 class SettingActivity : AppCompatActivity() , View.OnClickListener{
+    //初始化本地SharedPreferences
     private val preferences by lazy { SharedPreferencesUtils(this) }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setting)
+        //登陆密码对话框
         val dialog = alert("请输入密码进行管理","管理页面") {
             var password: EditText? = null
 
@@ -47,8 +49,9 @@ class SettingActivity : AppCompatActivity() , View.OnClickListener{
             }
 
         }.show().setCancelable(false)
-        //init()
     }
+
+    //初始化按钮监听器
     fun init(){
 
         set_groudid_btn.setOnClickListener(this)
@@ -68,6 +71,7 @@ class SettingActivity : AppCompatActivity() , View.OnClickListener{
         }
     }
 
+    //设置配置
     private fun setConfig(title:String,hint:String,type:Int,flag:Int){
         showCreateCategoryDialog(title, hint, type, flag)
     }

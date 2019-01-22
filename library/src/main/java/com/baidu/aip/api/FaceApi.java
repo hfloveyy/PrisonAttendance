@@ -4,10 +4,7 @@
 package com.baidu.aip.api;
 
 import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +37,15 @@ public class FaceApi {
 
     }
 
+
+    public boolean usersAdd(ArrayList<User> users) {
+        boolean ret = DBManager.getInstance().addUsers(users);
+
+        return ret;
+    }
+
+
+
     public static synchronized FaceApi getInstance() {
         if (instance == null) {
             instance = new FaceApi();
@@ -70,7 +76,7 @@ public class FaceApi {
         if (!matcher.matches()) {
             return false;
         }
-        boolean ret = DBManager.getInstance().addUser(user);
+        boolean ret = DBManager.getInstance().addUserP(user);
 
         return ret;
     }
@@ -80,7 +86,7 @@ public class FaceApi {
             return false;
         }
 
-        boolean ret = DBManager.getInstance().deleteUser(userId, groupId);
+        boolean ret = DBManager.getInstance().deleteUserP(userId, groupId);
         return ret;
     }
 
@@ -92,6 +98,10 @@ public class FaceApi {
         boolean ret = DBManager.getInstance().updateUser(user, mode);
         return ret;
     }
+
+
+
+
 
     public boolean userFaceDelete(String userId, String groupId, String faceToken) {
         if (TextUtils.isEmpty(userId) || TextUtils.isEmpty(groupId) || TextUtils.isEmpty(faceToken)) {

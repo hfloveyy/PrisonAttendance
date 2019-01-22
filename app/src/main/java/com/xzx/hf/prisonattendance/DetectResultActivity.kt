@@ -39,24 +39,38 @@ import org.jetbrains.anko.textColor
 import org.json.JSONArray
 import org.json.JSONObject
 import com.github.salomonbrys.kotson.jsonArray
+import com.xzx.hf.prisonattendance.entity.CallLog
 import com.xzx.hf.prisonattendance.entity.UserPlus
 
+//结果显示界面
 class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
+    //初始化本地SharedPreferences
     private val preferences by lazy { SharedPreferencesUtils(this) }
     private var adapter: UserAdapter? = null
 
     private var area = ""
 
     private var crimialslist = mutableListOf<String>()
+    //警察Id
     private var policeId:String = ""
+    //警察姓名
     private var policeName:String = ""
+    //任务名称
     private var taskName:String = ""
     private var total:String = ""
+    //任务类型
     private var callnameType = ""
+    //设备编号
     private var appno = ""
+
     private var msg = ""
+    //保存结果的JSON
     private var saveJson = JSONObject()
     private var saveArray = JSONArray()
+
+    private var obj = mutableMapOf<String,String>()
+
+    //状态列表
     private val statusList = listOf<String>("正常","看病","接见","其他")
     private val userList = mutableListOf<User>()
 
@@ -73,6 +87,7 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
         val intent = intent
         if (intent != null) {
             try {
+                //获取VideoIdentifyActivity传递过来的MSG
                 msg = intent.getStringExtra("msg")
                 Log.e("TestFuel","MSG:"+msg)
                 var json = JSONObject(msg)
@@ -89,6 +104,7 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
                 saveJson.put("policeId",policeId)
                 saveJson.put("policeName",policeName)
                 saveJson.put("appno",appno)
+                saveJson.put("cmd","save")
                 if (appno == preferences.appno)
                     back_btn.text = "保存结果"
                 val total = crimialslist.size
@@ -161,13 +177,25 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
     }
 
     override fun onClick(v: View?) {
+        obj.forEach{
+            var json = JSONObject()
+            json.put("userid",it.key)
+            json.put("status",it.value)
+            saveArray.put(json)
+        }
         Log.e("TestFuel","SaveJson:"+saveJson.toString())
         if (appno == preferences.appno) {
             saveJson.put("userlist",saveArray)
+            val callLog = CallLog()
+            callLog.calllog = saveJson.toString()
+            callLog.updatetime = System.currentTimeMillis()
+            callLog.save()
             HttpApi.postDataSync(saveJson.toString(),"/UpdateUserStatus")
         }
         startActivity<MainActivity>()
     }
+
+    //禁用返回键
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
         if(event!!.keyCode == KeyEvent.KEYCODE_BACK ) {
             //do something.
@@ -177,6 +205,8 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
             return super.dispatchKeyEvent(event)
         }
     }
+
+    //初始化布局
     private fun findView() {
 
 
@@ -188,6 +218,7 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
         user_list_rv!!.setAdapter(adapter)
     }
 
+    //为每个ITEM增加监听器
     private fun addListener() {
         adapter!!.setOnItemClickLitsener(object : OnItemClickListener {
 
@@ -202,46 +233,24 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
                     selector("请选择状态：",statusList){ds, i ->
                         view.user_status_tv.text = "当前状态："+statusList[i]
                         val status = when(statusList[i]){
-                            "正常" -> "1"
-                            "就医" -> "2"
-                            "会见" -> "3"
-                            "其他" -> "4"
+                            statusList[0] -> "1"
+                            statusList[1] -> "2"
+                            statusList[2] -> "3"
+                            statusList[3] -> "4"
                             else -> "1"
                         }
-                        /*
-                        var json = jsonObject(
-                            "userid" to user.userId,
-                            "status" to status
-                        )*/
-                        var json = JSONObject()
-                        json.put("userid",user.userId)
-                        json.put("status",status)
-
-                        saveArray.put(json)
+                        if (obj.containsKey(user.userId)){
+                            obj.replace(user.userId,status)
+                        }else{
+                            obj.put(user.userId,status)
+                        }
                     }
-                    /*
-                    val cursor = LitePal.findBySQL("select * from userplus where userid = ?", user.userId)
-                    cursor.move(1)
-                    val userType = cursor.getString(cursor.getColumnIndex("usertype"))
-                    val area = cursor.getString(cursor.getColumnIndex("area"))
-                    val intent = Intent(this@DetectResultActivity, UserActivity::class.java)
-                    intent.putExtra("user_id", user.userId)
-                    intent.putExtra("user_info", user.userInfo)
-                    intent.putExtra("area", area)
-                    intent.putExtra("user_type", userType)
-
-                    startActivity(intent)
-                    */
                 }
 
             }
 
             override fun onItemLongClick(view: View, position: Int) {
-
-                /*
-                if (position <= adapter!!.getUserList().size) {
-                    showAlertDialog(adapter!!.getUserList()[position])
-                }*/
+                //响应长按
             }
         })
     }
@@ -262,6 +271,8 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
         }
     }
 
+
+    //RecyclerView适配器
     inner class UserAdapter : RecyclerView.Adapter<UserAdapter.ViewHolder>() {
 
         private var userList: MutableList<User> = mutableListOf()
@@ -305,11 +316,11 @@ class DetectResultActivity : AppCompatActivity(),View.OnClickListener{
             val user = userList[position]
             val userPlus = PaFaceApi.retUserPlus(user)
             val status = when(userPlus.userStatus){
-                "1" -> "正常"
-                "2" -> "就医"
-                "3" -> "会见"
-                "4" -> "其他"
-                else -> "1"
+                "1" -> statusList[0]
+                "2" -> statusList[1]
+                "3" -> statusList[2]
+                "4" -> statusList[3]
+                else -> statusList[0]
             }
             val color = when(userPlus.userStatus){
                 "1" -> getColor(R.color.blue)

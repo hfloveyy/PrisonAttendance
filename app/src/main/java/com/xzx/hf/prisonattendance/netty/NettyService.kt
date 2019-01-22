@@ -324,6 +324,9 @@ class NettyService : Service(),NettyListener{
                             if (cmd == "end-callname") {
                                 Log.e("Netty","log:"+log)
                                 HttpApi.postDataSync(log,"/BatchUploadRecord")
+                            }else if (cmd == "save") {
+                                Log.e("Netty","log:"+log)
+                                HttpApi.postDataSync(log,"/UpdateUserStatus")
                             }
                         }
                         //preferences.netUnavailableTime = System.currentTimeMillis()

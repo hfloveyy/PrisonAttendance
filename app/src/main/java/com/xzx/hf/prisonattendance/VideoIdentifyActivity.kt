@@ -761,23 +761,11 @@ class VideoIdentityActivity : AppCompatActivity(), View.OnClickListener  ,NettyL
                 match_user_tv!!.text = "编号:${user.userId}\n姓名:${user.userInfo}"
                 //在线加载图片
                 val requestOption = RequestOptions()
-                requestOption.diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true)
+                //设置不缓存
+                //requestOption.diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true)
                 requestOption.error(R.drawable.avatar)
                 Glide.with(this@VideoIdentityActivity).applyDefaultRequestOptions(requestOption)
                     .load("http://${preferences.serverIP}:8080/Uploads/HeadPicture/${user.userId}/${user.userId}.jpg").into(match_avator_iv)
-                /*
-                val featureList = user.featureList
-                if (featureList != null && featureList.size > 0) {
-                    // featureTv.setText(new String(featureList.get(0).getFeature()));
-                    val faceDir = FileUitls.getFaceDirectory()
-                    if (faceDir != null && faceDir.exists()) {
-                        val file = File(faceDir, featureList[0].imageName)
-                        if (file.exists()) {
-                            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-                            match_avator_iv!!.setImageBitmap(bitmap)
-                        }
-                    }
-                }*/
             }
         })
     }

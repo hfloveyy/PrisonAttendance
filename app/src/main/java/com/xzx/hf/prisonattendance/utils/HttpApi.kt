@@ -9,6 +9,8 @@ import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.Toast
+import com.baidu.aip.api.FaceApi
+import com.baidu.aip.db.DBManager
 import com.baidu.aip.entity.Feature
 import com.baidu.aip.entity.User
 import com.github.kittinunf.fuel.Fuel
@@ -32,8 +34,7 @@ import org.jetbrains.anko.indeterminateProgressDialog
 import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
-
-
+import java.util.ArrayList
 
 
 object HttpApi{
@@ -381,16 +382,39 @@ object HttpApi{
                     val ret_code = jsonObject.getString("ret_code")
                     val jsonArray = jsonObject.getJSONArray("userlist")
                     Log.e("TestFuel","List长度："+ jsonArray.length().toString())
+                    /*
+                    val mDBHelper = DBManager.getInstance().getmDBHelper()
+                    val mDatabase = mDBHelper.writableDatabase
+                    try {
+
+                        DBManager.getInstance().beginTransaction(mDatabase)
+                        for (i in 0..(jsonArray.length()-1)){
+                            var obj:JSONObject = jsonArray.get(i) as JSONObject
+                            //Log.e("TestFuel",i.toString())
+                            //Log.e("TestFuel",obj.toString())
+                            launch {
+                                val ret = DBUtil.updateUser(obj)
+                            }
+                        }
+                        DBManager.getInstance().setTransactionSuccessful(mDatabase)
+                    }catch (e:Exception){
+                        Log.e("TestFuel",e.toString())
+                    }finally {
+                        DBManager.getInstance().endTransaction(mDatabase)
+                    }
+                    */
+
+                    val users = mutableListOf<User>()
                     for (i in 0..(jsonArray.length()-1)){
                         var obj:JSONObject = jsonArray.get(i) as JSONObject
                         //Log.e("TestFuel",i.toString())
                         //Log.e("TestFuel",obj.toString())
-                        launch {
-                            val ret = DBUtil.updateUser(obj)
-                        }
+                        val u = DBUtil.retUser(obj)
+                        users.add(u)
                     }
+                    ret_value = FaceApi.getInstance().usersAdd(users as ArrayList<User>)
 
-                    ret_value = true
+                    //ret_value = true
                 }else{
                     Log.e("DBSync","网络连接失败,未更新数据库。")
                     ret_value = false

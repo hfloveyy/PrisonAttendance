@@ -55,6 +55,7 @@ dependencies {
     implementation "org.jetbrains.anko:anko-commons:$anko_version"
     implementation "org.jetbrains.anko:anko-design:$anko_version"
     implementation project(path: ':library')
+    //implementation project(path: ':facelibrary')
     //ui
     implementation 'com.github.rubensousa:raiflatbutton:0.1'
     implementation 'info.hoang8f:fbutton:1.0.5'

@@ -69,7 +69,46 @@ object DBUtil{
         }
 
     }
+    fun retUser(json:JSONObject):User{
+        try {
+            val user = User()
+            val feature = Feature()
+            val userPlus = UserPlus()
+            user.userId = json.getString("user_id")
+            user.userInfo = json.getString("user_info")
+            user.groupId = "1"//json.getString("group_id")
+            //user.ctime = json.getLong("ctime")
+            user.updateTime = json.getLong("update_time")
 
+            userPlus.userType = json.getString("usertype")
+            userPlus.userId = json.getString("user_id")
+            userPlus.updateTime = json.getLong("update_time")
+            userPlus.area = json.getString("area")
+            userPlus.userStatus = json.getString("userstatus")
+            userPlus.userWorkStatus = json.getString("userWorkStatus")
+            feature.userId = json.getString("user_id")
+            feature.groupId = "1"//json.getString("group_id")
+            feature.faceToken = json.getString("face_token")
+            feature.setFeature(json.getString("face_token"))
+            feature.imageName = json.getString("user_id")
+            //feature.ctime = json.getLong("ctime")
+            feature.updateTime = json.getLong("update_time")
+            userPlus.updateTime = user.updateTime
+            userPlus.save()
+            user.featureList.add(feature)
+
+
+            return user
+
+        }catch (e:Exception){
+            Log.e("DBSync",e.toString())
+            val user = User()
+            user.userId = json.getString("user_id")
+            FaceApi.getInstance().userDelete(user.userId,"1")
+            return user
+        }
+
+    }
     fun updateUser(json:JSONObject):Boolean{
         try {
             val user = User()
@@ -98,17 +137,17 @@ object DBUtil{
             user.featureList.add(feature)
             synchronized(this){
                 if (FaceApi.getInstance().userDelete(user.userId,user.groupId)){
-                    val ret = LitePal.deleteAll(UserPlus::class.java,"userid = ?" , user.userId)
-                    Log.e("DBsync","${user.userId}删除$ret 条数据！")
+                    //val ret = LitePal.deleteAll(UserPlus::class.java,"userid = ?" , user.userId)
+                    //Log.e("DBsync","${user.userId}删除$ret 条数据！")
+                    /*
                     if (PaFaceApi.deleteFaceImage(user.userId)){
                         Log.e("DBsync","${user.userId}删除人脸文件！")
-                    }
+                    }*/
                 }
-
                 if (FaceApi.getInstance().getUserInfo("1",user.userId) == null ){
                     if (FaceApi.getInstance().userAdd(user)) {
-                        userPlus.updateTime = user.updateTime
-                        userPlus.save()
+                        //userPlus.updateTime = user.updateTime
+                        //userPlus.save()
                         Log.e("DBsync","${user.userId}insert success")
 
                     } else {

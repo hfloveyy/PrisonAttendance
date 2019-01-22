@@ -6,6 +6,7 @@ package com.baidu.aip.db;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 
 public class DBHelper extends SQLiteOpenHelper {
@@ -57,9 +58,9 @@ public class DBHelper extends SQLiteOpenHelper {
         StringBuffer featureSql = new StringBuffer();
         featureSql.append(CREATE_TABLE_START_SQL).append(TABLE_FEATURE).append(" ( ");
         featureSql.append(" _id").append(CREATE_TABLE_PRIMIRY_SQL);
+        featureSql.append(" user_id").append(" varchar(32) UNIQUE ON CONFLICT REPLACE DEFAULT \"\",");
         featureSql.append(" face_token").append(" varchar(128) default \"\" ,");
         featureSql.append(" group_id").append(" varchar(32) default \"\" ,");
-        featureSql.append(" user_id").append(" varchar(32) default \"\" ,");
         featureSql.append(" feature").append(" blob   ,");
         featureSql.append(" image_name").append(" varchar(64) default \"\"  ,");
         featureSql.append(" ctime").append(" long ,");
@@ -78,7 +79,7 @@ public class DBHelper extends SQLiteOpenHelper {
         StringBuffer userSql = new StringBuffer();
         userSql.append(CREATE_TABLE_START_SQL).append(TABLE_USER).append(" ( ");
         userSql.append(" _id").append(CREATE_TABLE_PRIMIRY_SQL);
-        userSql.append(" user_id").append(" varchar(32) default \"\"   ,");
+        userSql.append(" user_id").append(" varchar(32) UNIQUE ON CONFLICT REPLACE DEFAULT \"\"   ,");
         userSql.append(" user_info").append(" varchar(32) default \"\"   ,");
         userSql.append(" group_id").append(" varchar(32) default \"\"   ,");
 
@@ -87,6 +88,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
 
         try {
+            Log.e("DBSync",userSql.toString());
             db.execSQL(groupSql.toString());
             db.execSQL(userSql.toString());
             db.execSQL(featureSql.toString());

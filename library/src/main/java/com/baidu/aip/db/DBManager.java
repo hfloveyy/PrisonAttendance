@@ -8,6 +8,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -64,6 +66,9 @@ public class DBManager {
             mDBHelper = new DBHelper(context.getApplicationContext());
         }
     }
+    public SQLiteOpenHelper getmDBHelper(){
+        return mDBHelper;
+    }
     /**
      * 打开数据库
      *
@@ -115,6 +120,84 @@ public class DBManager {
         return true;
     }
 
+
+
+    public boolean addUsers(ArrayList<User> users) {
+        if (mDBHelper == null) {
+            return false;
+        }
+        try {
+            mDatabase = mDBHelper.getWritableDatabase();
+            beginTransaction(mDatabase);
+            for (User user : users){
+                ContentValues cv = new ContentValues();
+                cv.put("user_id", user.getUserId());
+                cv.put("user_info", user.getUserInfo());
+                cv.put("group_id", user.getGroupId());
+                cv.put("update_time", user.getUpdateTime());
+                cv.put("ctime", user.getCtime());
+                //cv.put("update_time", System.currentTimeMillis());
+                //cv.put("ctime", System.currentTimeMillis());
+
+                //long rowId = mDatabase.insert(DBHelper.TABLE_USER, null, cv);
+                long rowId = mDatabase.insertWithOnConflict(DBHelper.TABLE_USER, null, cv,5);
+                if (rowId < 0) {
+                    return false;
+                }
+
+                for (Feature feature : user.getFeatureList()) {
+                    if (!addFeature(feature, mDatabase)) {
+                        return false;
+                    }
+                }
+                Log.e("DBSync","insert user success:" + rowId);
+            }
+
+            setTransactionSuccessful(mDatabase);
+
+        } finally {
+            endTransaction(mDatabase);
+        }
+
+        return true;
+    }
+    public boolean addUserP(User user) {
+        if (mDBHelper == null) {
+            return false;
+        }
+        try {
+            mDatabase = mDBHelper.getWritableDatabase();
+            //beginTransaction(mDatabase);
+            if (queryUser(user.getGroupId(),user.getUserId()) == null){
+                ContentValues cv = new ContentValues();
+                cv.put("user_id", user.getUserId());
+                cv.put("user_info", user.getUserInfo());
+                cv.put("group_id", user.getGroupId());
+                cv.put("update_time", user.getUpdateTime());
+                cv.put("ctime", user.getCtime());
+                //cv.put("update_time", System.currentTimeMillis());
+                //cv.put("ctime", System.currentTimeMillis());
+
+                long rowId = mDatabase.insert(DBHelper.TABLE_USER, null, cv);
+                if (rowId < 0) {
+                    return false;
+                }
+
+                for (Feature feature : user.getFeatureList()) {
+                    if (!addFeature(feature, mDatabase)) {
+                        return false;
+                    }
+                }
+                //setTransactionSuccessful(mDatabase);
+                LogUtils.i("insert user success:" + rowId);
+            }
+
+        } finally {
+            //endTransaction(mDatabase);
+        }
+
+        return true;
+    }
     public boolean addUser(User user) {
         if (mDBHelper == null) {
             return false;
@@ -492,7 +575,32 @@ public class DBManager {
         }
         return success;
     }
+    public boolean deleteUserP(String userId, String groupId) {
+        boolean success = false;
+        try {
+            mDatabase = mDBHelper.getWritableDatabase();
+            //beginTransaction(mDatabase);
 
+            if (!TextUtils.isEmpty(userId)) {
+                String where = "user_id = ? and group_id = ?";
+                String[] whereValue = { userId, groupId };
+
+                if (mDatabase.delete(DBHelper.TABLE_FEATURE, where, whereValue) < 0) {
+                    return false;
+                }
+                if (mDatabase.delete(DBHelper.TABLE_USER, where, whereValue) < 0) {
+                    return false;
+                }
+
+                //setTransactionSuccessful(mDatabase);
+                success = true;
+            }
+
+        } finally {
+            //endTransaction(mDatabase);
+        }
+        return success;
+    }
     public boolean deleteUser(String userId, String groupId) {
         boolean success = false;
         try {
@@ -550,7 +658,7 @@ public class DBManager {
     }
 
 
-    private void beginTransaction(SQLiteDatabase mDatabase) {
+    public void beginTransaction(SQLiteDatabase mDatabase) {
         if (allowTransaction) {
             mDatabase.beginTransaction();
         } else {
@@ -559,13 +667,13 @@ public class DBManager {
         }
     }
 
-    private void setTransactionSuccessful(SQLiteDatabase mDatabase) {
+    public void setTransactionSuccessful(SQLiteDatabase mDatabase) {
         if (allowTransaction) {
             mDatabase.setTransactionSuccessful();
         }
     }
 
-    private void endTransaction(SQLiteDatabase mDatabase) {
+    public void endTransaction(SQLiteDatabase mDatabase) {
         if (allowTransaction) {
             mDatabase.endTransaction();
         }
